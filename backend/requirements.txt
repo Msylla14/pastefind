@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+yt-dlp>=2024.12.06
+shazamio
+python-multipart
+aiohttp

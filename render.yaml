@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: pastefind-backend
+    env: python
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT
+    plan: free
+    branch: main
+    region: oregon

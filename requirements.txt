@@ -1,0 +1,5 @@
+fastapi
+uvicorn
+shazamio
+yt-dlp
+python-multipart
