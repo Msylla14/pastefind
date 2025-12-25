@@ -1,9 +1,1 @@
-node_modules/
-__pycache__/
-*.pyc
-.env
-venv/
-.DS_Store
-dist/
-build/
-temp_audio.*
+.venv/ 
