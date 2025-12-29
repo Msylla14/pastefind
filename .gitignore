@@ -1,2 +1,7 @@
-.venv/ 
-node_modules/ 
+.venv/
+node_modules/
+dist/
+__pycache__/
+.DS_Store
+*.log
+.env 

@@ -1,5 +1,28 @@
 # PasteFind
 
+## How to Run
+
+### Frontend (The 3D Interface)
+1. Open a terminal.
+2. Run `npm install` (only needed once).
+3. Run `npm run dev`.
+4. Open [http://localhost:5173](http://localhost:5173).
+
+### Backend (The API)
+1. Open a new terminal.
+2. Run `pip install -r requirements.txt` (only needed once).
+3. Run `uvicorn backend.main:app --reload`.
+4. The API will be available at [http://localhost:8000](http://localhost:8000).
+
+## Project Structure
+- `src/`: React Frontend code.
+- `backend/`: FastAPI Backend code.
+
+---
+Original Vite Readme below:
+
+# PasteFind
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:
