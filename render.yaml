@@ -1,25 +1,29 @@
 services:
-  # The Backend (API)
+  # Backend (Web Service) - api.pastefind.com
   - type: web
     name: pastefind-backend
     env: python
-    buildCommand: pip install -r backend/requirements.txt
-    startCommand: cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT
-    plan: free
+    plan: starter
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
     branch: main
     region: oregon
+    customDomains:
+      - api.pastefind.com
     envVars:
       - key: PYTHON_VERSION
         value: 3.9.0
 
-  # The Frontend (React/Vite Site)
+  # Frontend (Static Site) - pastefind.com
   - type: static
     name: pastefind-frontend
     env: static
-    buildCommand: npm install && npm run build
-    publishDir: dist
-    plan: free
+    plan: starter
+    rootDir: backend/templates
     branch: main
+    customDomains:
+      - pastefind.com
     routes:
       - type: rewrite
         source: /*
