@@ -1,197 +1,48 @@
 <!DOCTYPE html>
 <html lang="fr">
-
 <head>
   <meta charset="UTF-8">
+  <title>PasteFind</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PasteFind - Studio</title>
   <style>
-    /* STYLE GLOBAL - DARK MODE STUDIO */
     body {
-      margin: 0;
-      padding: 0;
-      background-color: #0a0a0a;
-      /* Noir profond */
-      color: white;
-      font-family: 'Segoe UI', Roboto, sans-serif;
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: #e5e7eb;
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
-      min-height: 100vh;
-      overflow-x: hidden;
+      height: 100vh;
+      margin: 0;
     }
-
     .container {
       text-align: center;
-      z-index: 10;
-      width: 90%;
-      max-width: 500px;
-    }
-
-    /* INPUT GLASSMORPHISM */
-    input {
-      width: 100%;
-      padding: 15px;
-      border-radius: 30px;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      background: rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(10px);
-      color: white;
-      font-size: 16px;
-      outline: none;
-      margin-bottom: 20px;
-    }
-
-    button {
-      padding: 12px 30px;
-      border-radius: 25px;
-      border: none;
-      background: white;
-      color: black;
-      font-weight: bold;
-      cursor: pointer;
-      transition: 0.3s;
-    }
-
-    button:hover {
-      transform: scale(1.05);
-      box-shadow: 0 0 20px rgba(255, 255, 255, 0.4);
-    }
-
-    /* CARD DE RÉSULTAT */
-    #result {
-      margin-top: 30px;
+      max-width: 600px;
       padding: 20px;
-      border-radius: 20px;
-      background: rgba(0, 0, 0, 0.6);
-      backdrop-filter: blur(15px);
-      border: 1px solid rgba(255, 0, 127, 0.3);
-      display: none;
-      /* Caché par défaut */
     }
-
-    .cover-art {
-      width: 150px;
-      height: 150px;
-      border-radius: 15px;
-      margin-bottom: 15px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    h1 {
+      font-size: 3rem;
+      margin-bottom: 10px;
     }
-
-    /* BOUTONS NÉON ROSE */
-    .stream-buttons {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 10px;
-      margin-top: 20px;
+    p {
+      font-size: 1.2rem;
+      margin-bottom: 30px;
+      color: #cbd5f5;
     }
-
-    .btn-neon {
+    .badge {
       display: inline-block;
       padding: 10px 20px;
-      border: 1px solid #ff007f;
-      /* Rose Néon */
-      border-radius: 20px;
-      color: #ff007f;
-      text-decoration: none;
+      background: #4f46e5;
+      border-radius: 999px;
       font-weight: bold;
-      font-size: 14px;
-      transition: 0.3s;
-      background: rgba(255, 0, 127, 0.1);
-    }
-
-    .btn-neon:hover {
-      background: #ff007f;
-      color: white;
-      box-shadow: 0 0 15px #ff007f;
-    }
-
-    /* PROTECTION TRADUCTION */
-    .notranslate {
-      font-family: inherit;
-    }
-
-    .footer-note {
-      margin-top: 40px;
-      font-size: 12px;
-      color: rgba(255, 255, 255, 0.5);
     }
   </style>
 </head>
-
 <body>
-
   <div class="container">
-    <h1
-      style="font-family: 'Arial Black', sans-serif; letter-spacing: 3px; background: linear-gradient(to right, #ff007f, #8A2BE2); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 5px;">
-      PasteFind</h1>
-    <p style="text-transform: uppercase; font-size: 12px; letter-spacing: 2px; opacity: 0.8;">Scanner Musical de
-      Précision</p>
-
-    <input type="text" id="videoUrl" placeholder="Colle un lien YouTube ou Facebook...">
-    <button onclick="analyzeMusic()" id="btnText">ANALYSER LE SON</button>
-
-    <div id="result" translate="no" class="notranslate">
-    </div>
-
-    <div class="footer-note">Version 1.0 - Prochaine mise à jour bientôt (Support TikTok complet).</div>
+    <h1>PasteFind</h1>
+    <p>Partagez du texte simplement, rapidement et sans inscription.</p>
+    <div class="badge">Bientôt disponible</div>
   </div>
-
-  <script>
-    async function analyzeMusic() {
-      // 🔴 IMPORTANT : Remplacer cette URL par celle de Render une fois déployé
-      // Exemple : const API_URL = "https://mon-app.onrender.com/api/analyze";
-      // 🟢 MODE LOCAL : On tape sur le backend Python local
-      // const API_URL = "http://localhost:8000/api/analyze";
-      const API_URL = "https://PasteFind.onrender.com/api/analyze"; // Pour la prod plus tard
-
-      const urlInput = document.getElementById('videoUrl').value;
-      const resultDiv = document.getElementById('result');
-      const btn = document.getElementById('btnText');
-
-      if (!urlInput) return alert("Lien non supporté ou musique introuvable.");
-
-      // Animation de chargement
-      btn.innerText = "RECHERCHE EN COURS...";
-      btn.disabled = true;
-      resultDiv.style.display = "none";
-
-      try {
-        const response = await fetch(API_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url: urlInput })
-        });
-
-        const data = await response.json();
-
-        if (data.title) {
-          resultDiv.style.display = "block";
-          resultDiv.innerHTML = `
-                        <img src="${data.image}" class="cover-art">
-                        <h2 style="margin: 5px 0;">${data.title}</h2>
-                        <p style="opacity: 0.7;">${data.subtitle}</p>
-                        
-                        <div class="stream-buttons">
-                            ${data.apple_music ? `<a href="${data.apple_music}" target="_blank" class="btn-neon">APPLE MUSIC</a>` : ''}
-                            <a href="${data.spotify_url}" target="_blank" class="btn-neon">SPOTIFY</a>
-                            <a href="${data.youtube_url}" target="_blank" class="btn-neon">YOUTUBE</a>
-                        </div>
-                    `;
-        } else {
-          alert("Lien non supporté ou musique introuvable.");
-        }
-      } catch (error) {
-        console.error(error);
-        alert("Lien non supporté ou musique introuvable.");
-      } finally {
-        btn.innerText = "ANALYSER LE SON";
-        btn.disabled = false;
-      }
-    }
-  </script>
 </body>
-
 </html>
