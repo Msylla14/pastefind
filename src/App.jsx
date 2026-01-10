@@ -31,7 +31,7 @@ function App() {
 
     try {
       // Reverted to hit n8n directly not Python backend
-      const response = await fetch('https://PasteFind.onrender.com/api/analyze', {
+      const response = await fetch('https://api.pastefind.com/api/analyze', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
