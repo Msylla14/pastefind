@@ -167,6 +167,13 @@
 
         const data = await response.json();
 
+        // Check for specific error returned by backend
+        if (data.error) {
+          console.error("Backend Error:", data.error);
+          alert("Erreur analyse: " + data.error);
+          return;
+        }
+
         if (data.title) {
           resultDiv.style.display = "block";
           resultDiv.innerHTML = `
@@ -181,11 +188,11 @@
                         </div>
                     `;
         } else {
-          alert("Lien non supporté ou musique introuvable.");
+          alert("Lien non supporté ou musique introuvable. (Titre manquant)");
         }
       } catch (error) {
         console.error(error);
-        alert("Lien non supporté ou musique introuvable.");
+        alert("Erreur connexion serveur ou lien invalide.");
       } finally {
         btn.innerText = "ANALYSER LE SON";
         btn.disabled = false;

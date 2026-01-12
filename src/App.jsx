@@ -41,10 +41,15 @@ function App() {
 
 
       if (!response.ok) {
-        throw new Error('Analysis failed')
+        throw new Error('Analysis request failed')
       }
 
       const data = await response.json()
+
+      if (data.error) {
+        setError('Erreur analyse: ' + data.error)
+        return
+      }
 
       setResult({
         title: data.title || 'Inconnu',
@@ -55,7 +60,7 @@ function App() {
       })
     } catch (err) {
       console.error(err)
-      setError('Erreur lors de l\'envoi à n8n. Vérifiez que n8n est actif.')
+      setError('Erreur connexion serveur ou lien invalide.')
     } finally {
       setLoading(false)
     }
