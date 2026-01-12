@@ -10,21 +10,8 @@ services:
     branch: main
     region: oregon
     customDomains:
-      - api.pastefind.com
+      - pastefind.com
     envVars:
       - key: PYTHON_VERSION
         value: 3.9.0
 
-  # Frontend (Static Site) - pastefind.com
-  - type: static
-    name: pastefind-frontend
-    env: static
-    plan: starter
-    rootDir: backend/templates
-    branch: main
-    customDomains:
-      - pastefind.com
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
