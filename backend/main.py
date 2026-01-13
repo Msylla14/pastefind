@@ -1,11 +1,13 @@
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse
-from fastapi.templating import Jinja2Templates
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 import yt_dlp
 import asyncio
 import logging
+import tempfile
+import os
+from shazamio import Shazam
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -16,13 +18,11 @@ app = FastAPI()
 # Configuration CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Production: ["https://pastefind.com"]
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-templates = Jinja2Templates(directory="templates")
 
 class VideoURL(BaseModel):
     url: str
@@ -31,74 +31,138 @@ async def identify_song(data: VideoURL):
     url = data.url
     logger.info(f"Analyzing URL: {url}")
     
-    # Enhanced yt-dlp options
+    # yt-dlp options pour télécharger l'audio
     ydl_opts = {
-        'quiet': True,
-        'no_warnings': True,
         'format': 'bestaudio/best',
         'noplaylist': True,
-        'extract_flat': 'in_playlist', # Extract metadata efficiently, avoid full download parsing if possible
+        'quiet': True,
+        'no_warnings': True,
+        'extract_audio': True,
         'geo_bypass': True,
         'nocheckcertificate': True,
-        'ignoreerrors': True, # Don't crash on individual errors
-        'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'ignoreerrors': True,
+        'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'outtmpl': '/tmp/%(id)s.%(ext)s',
+        'postprocessors': [{
+            'key': 'FFmpegExtractAudio',
+            'preferredcodec': 'mp3',
+            'preferredquality': '192',
+        }],
     }
 
+    audio_file = None
+    
     try:
-        # Run yt-dlp in executor
-        loop = asyncio.get_event_loop()
-        info = await loop.run_in_executor(None, lambda: yt_dlp.YoutubeDL(ydl_opts).extract_info(url, download=False))
+        # Étape 1 : Télécharger l'audio de la vidéo
+        logger.info("Downloading audio from video...")
         
-        if not info:
-             logger.error("No info returned from yt-dlp")
-             return None
-
-        # Handle 'flat' extraction where info might be entries list
-        if 'entries' in info:
-             # It's a playlist or flat extraction, take first entry
-             if len(info['entries']) > 0:
-                 info = info['entries'][0]
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=True)
+            
+            if not info:
+                logger.error("No info returned from yt-dlp")
+                return {"error": "Could not download video"}
+            
+            # Récupérer l'ID de la vidéo
+            video_id = info.get('id', 'unknown')
+            audio_file = f"/tmp/{video_id}.mp3"
+            
+            # Vérifier que le fichier existe
+            if not os.path.exists(audio_file):
+                logger.error(f"Audio file not found: {audio_file}")
+                return {"error": "Could not extract audio from video"}
+            
+            logger.info(f"Audio downloaded: {audio_file}")
         
-        # Extract metadata safe defaults
-        title = info.get('title', 'Unknown Title')
-        uploader = info.get('uploader', 'Unknown Artist')
-        thumbnail = info.get('thumbnail', '')
-        webpage_url = info.get('webpage_url', url)
+        # Étape 2 : Identifier la musique avec Shazam
+        logger.info("Identifying music with Shazam...")
+        shazam = Shazam()
         
-        # Detect if it looks like an error
-        if not title and not uploader:
-             logger.warning("Extracted info has no title or uploader")
-             return {"error": "Could not extract metadata"}
-
-        logger.info(f"Successfully analyzed: {title}")
+        # Reconnaissance musicale
+        result = await shazam.recognize(audio_file)
+        
+        # Nettoyer le fichier temporaire
+        try:
+            os.remove(audio_file)
+        except:
+            pass
+        
+        # Vérifier si Shazam a trouvé quelque chose
+        if not result or 'track' not in result:
+            logger.warning("Shazam could not identify the music")
+            return {
+                "error": "Music not recognized",
+                "title": "Musique non identifiée",
+                "subtitle": "Shazam n'a pas pu reconnaître cette musique",
+                "image": "",
+                "apple_music": "",
+                "spotify_url": "",
+                "youtube_url": url
+            }
+        
+        track = result['track']
+        
+        # Extraire les informations
+        title = track.get('title', 'Unknown Title')
+        artist = track.get('subtitle', 'Unknown Artist')
+        
+        # Image de la pochette
+        images = track.get('images', {})
+        cover_art = images.get('coverart', '') if images else ''
+        
+        # Liens vers les plateformes
+        apple_music_url = track.get('url', '')
+        
+        # Chercher le lien Spotify dans les sections
+        spotify_url = ""
+        youtube_music_url = ""
+        
+        sections = track.get('sections', [])
+        for section in sections:
+            if section.get('type') == 'SONG':
+                metadata = section.get('metadata', [])
+                for item in metadata:
+                    if item.get('title') == 'Spotify':
+                        spotify_url = item.get('text', '')
+                    elif item.get('title') == 'YouTube':
+                        youtube_music_url = item.get('text', '')
+        
+        # Construire la réponse
+        logger.info(f"Successfully identified: {title} by {artist}")
+        
         return {
             "title": title,
-            "subtitle": uploader,
-            "image": thumbnail,
-            "apple_music": "",
-            "spotify_url": "",
-            "youtube_url": webpage_url
+            "subtitle": artist,
+            "image": cover_art,
+            "apple_music": apple_music_url,
+            "spotify_url": spotify_url,
+            "youtube_url": youtube_music_url or url
         }
+        
     except Exception as e:
         logger.error(f"Error during analysis: {e}")
+        
+        # Nettoyer le fichier en cas d'erreur
+        if audio_file and os.path.exists(audio_file):
+            try:
+                os.remove(audio_file)
+            except:
+                pass
+        
         return {"error": str(e)}
 
-@app.get("/", response_class=HTMLResponse)
-async def home(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+@app.get("/")
+async def home():
+    return {"message": "PasteFind API - Music Recognition Service", "status": "online"}
 
 @app.post("/api/analyze")
 async def analyze_route(video: VideoURL):
     result = await identify_song(video)
     
     if not result:
-         # Internal error or yt-dlp returned nothing
-         raise HTTPException(status_code=400, detail="Analysis failed: No result")
+        raise HTTPException(status_code=400, detail="Analysis failed: No result")
     
     if "error" in result:
-         # Propagate the specific error message to frontend
-         # We return 200 OK because we want to pass the JSON body with error details
-         # OR we can return 422/400. Let's return 200 with error field so frontend logic handles it
-         return JSONResponse(content={"error": result["error"], "title": "", "subtitle": ""})
-
+        return JSONResponse(content=result)
+    
     return JSONResponse(content=result)
