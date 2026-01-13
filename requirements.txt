@@ -4,3 +4,5 @@ pydantic
 yt-dlp
 shazamio
 python-multipart
+pydub
+ffmpeg-python
