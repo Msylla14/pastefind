@@ -1,13 +1,14 @@
-from fastapi import FastAPI, Request, HTTPException
+import os
+import logging
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse
-from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 import yt_dlp
+from acrcloud.recognizer import ACRCloudRecognizer
 import asyncio
-import logging
+from typing import Optional
 
-# Set up logging
+# Configuration du logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -16,154 +17,239 @@ app = FastAPI()
 # Configuration CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Production: ["https://pastefind.com"]
+    allow_origins=["*"],  # En production: ["https://pastefind.com"]
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-templates = Jinja2Templates(directory="templates")
-
+# Modèle de données
 class VideoURL(BaseModel):
     url: str
 
-from shazamio import Shazam
-import os
-import uuid
+# Configuration ACRCloud depuis les variables d'environnement
+ACRCLOUD_CONFIG = {
+    'host': os.getenv('ACRCLOUD_HOST', 'identify-eu-west-1.acrcloud.com'),
+    'access_key': os.getenv('ACRCLOUD_ACCESS_KEY', ''),
+    'access_secret': os.getenv('ACRCLOUD_SECRET_KEY', ''),
+    'timeout': 10
+}
 
-async def identify_song(data: VideoURL):
-    url = data.url
-    logger.info(f"Analyzing URL: {url}")
-    
-    unique_id = str(uuid.uuid4())
-    temp_filename = f"temp_{unique_id}.mp3"
-    
-    # Enhanced yt-dlp options for audio download
-    ydl_opts = {
-        'format': 'bestaudio/best',
-        'outtmpl': temp_filename,
-        'quiet': True,
-        'no_warnings': True,
-        'noplaylist': True,
-        'geo_bypass': True,
-        'nocheckcertificate': True,
-        'ignoreerrors': True,
-        'postprocessors': [{
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': 'mp3',
-            'preferredquality': '192',
-        }],
-    }
-
+def download_audio(url: str) -> Optional[str]:
+    """
+    Télécharge l'audio d'une vidéo YouTube/Facebook/TikTok
+    Retourne le chemin du fichier audio ou None en cas d'erreur
+    """
     try:
-        # 1. Download Audio via yt-dlp
-        loop = asyncio.get_event_loop()
-        await loop.run_in_executor(None, lambda: yt_dlp.YoutubeDL(ydl_opts).download([url]))
-        
-        # Check if file exists (yt-dlp might append .mp3)
-        final_filename = temp_filename
-        if not os.path.exists(final_filename):
-            final_filename = temp_filename + ".mp3"
-        
-        if not os.path.exists(final_filename):
-             logger.error("Audio download failed")
-             return {"error": "Failed to download audio track"}
-
-        # 2. Recognize with Shazam
-        shazam = Shazam()
-        out = await shazam.recognize(final_filename)
-        
-        # Cleanup temp file
-        if os.path.exists(final_filename):
-            os.remove(final_filename)
-
-        # 3. Parse Result
-        track = out.get('track', {})
-        if not track:
-             return {"error": "No music found or song not recognized"}
-
-        title = track.get('title', 'Unknown Title')
-        subtitle = track.get('subtitle', 'Unknown Artist')
-        images = track.get('images', {})
-        cover_art = images.get('coverarthq', images.get('background', ''))
-        
-        # Links
-        hub = track.get('hub', {})
-        actions = hub.get('actions', [])
-        spotify_url = ""
-        for action in actions:
-            if action.get('type') == 'uri':
-                 spotify_url = action.get('uri', '') # Often returns deep link, verify payload
-        
-        # Shazam often provides provider links in 'sections' or 'hub'. 
-        # For simplicity, we use what we have or search metadata if needed.
-        # shazamio often explicitly gives providers in some versions, but let's stick to basic extraction first.
-        sections = track.get('sections', [])
-        for section in sections:
-            if section.get('type') == 'SONG':
-                for metadata in section.get('metadata', []):
-                     if metadata.get('title') == 'Spotify':
-                          # Sometimes text is the link? vary rare.
-                          pass
-
-        # Construct reliable response
-        # Note: Spotify URL might need a separate lookup if Shazam doesn't provide a direct web link (it often provides 'spotify:track:...')
-        # We can construct web link if we have the ID.
-        
-        web_spotify_url = ""
-        if "spotify:track:" in spotify_url:
-             track_id = spotify_url.split(":")[-1]
-             web_spotify_url = f"https://open.spotify.com/track/{track_id}"
-        
-        youtube_url = ""
-        # Look for youtube link in sections or just use input url as fallback?
-        # Ideally we want the OFFICIAL video found by Shazam.
-        for section in sections:
-             if section.get('type') == 'VIDEO':
-                  youtube_url = section.get('youtubeurl', '')
-                  break
-        
-        if not youtube_url:
-             youtube_url = url # Fallback to source
-
-        logger.info(f"Successfully analyzed: {title} by {subtitle}")
-        return {
-            "title": title,
-            "subtitle": subtitle,
-            "image": cover_art,
-            "apple_music": "",
-            "spotify_url": web_spotify_url,
-            "youtube_url": youtube_url
+        # Options yt-dlp pour télécharger l'audio
+        ydl_opts = {
+            'format': 'bestaudio/best',
+            'postprocessors': [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'mp3',
+                'preferredquality': '192',
+            }],
+            'outtmpl': '/tmp/%(id)s.%(ext)s',
+            'quiet': True,
+            'no_warnings': True,
+            'extract_flat': False,
         }
-
+        
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=True)
+            video_id = info.get('id', 'unknown')
+            audio_file = f"/tmp/{video_id}.mp3"
+            
+            logger.info(f"Audio téléchargé : {audio_file}")
+            return audio_file
+            
     except Exception as e:
-        logger.error(f"Error during analysis: {e}")
-        # Clean up if failed during processing
-        if 'final_filename' in locals() and os.path.exists(final_filename):
-             os.remove(final_filename)
-        elif 'temp_filename' in locals() and os.path.exists(temp_filename):
-             try:
-                os.remove(temp_filename)
-             except:
-                pass
-        return {"error": str(e)}
+        logger.error(f"Erreur téléchargement audio: {str(e)}")
+        return None
 
-@app.get("/", response_class=HTMLResponse)
-async def home(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+def identify_music_with_acrcloud(audio_file: str) -> dict:
+    """
+    Identifie la musique avec ACRCloud
+    Retourne les informations de la chanson ou une erreur
+    """
+    try:
+        # Vérifier que les clés API sont configurées
+        if not ACRCLOUD_CONFIG['access_key'] or not ACRCLOUD_CONFIG['access_secret']:
+            logger.error("Clés API ACRCloud manquantes dans les variables d'environnement")
+            return {'error': 'Configuration ACRCloud manquante'}
+        
+        # Créer le recognizer ACRCloud
+        recognizer = ACRCloudRecognizer(ACRCLOUD_CONFIG)
+        
+        # Reconnaissance avec le fichier audio
+        logger.info(f"Reconnaissance ACRCloud du fichier: {audio_file}")
+        result = recognizer.recognize_by_file(audio_file, 0)
+        
+        # Parser le résultat JSON
+        import json
+        result_data = json.loads(result)
+        
+        logger.info(f"Résultat ACRCloud: {result_data}")
+        
+        # Vérifier le statut de la réponse
+        status = result_data.get('status', {})
+        if status.get('code') != 0:
+            error_msg = status.get('msg', 'Musique non identifiée')
+            logger.warning(f"ACRCloud: {error_msg}")
+            return {'error': f'Musique non identifiée: {error_msg}'}
+        
+        # Extraire les métadonnées de la musique
+        metadata = result_data.get('metadata', {})
+        music_list = metadata.get('music', [])
+        
+        if not music_list:
+            return {'error': 'Aucune musique trouvée'}
+        
+        # Prendre la première correspondance (meilleur score)
+        music = music_list[0]
+        
+        # Extraire les informations
+        title = music.get('title', 'Unknown Title')
+        artists = music.get('artists', [])
+        artist_name = artists[0].get('name', 'Unknown Artist') if artists else 'Unknown Artist'
+        album = music.get('album', {})
+        album_name = album.get('name', '')
+        
+        # Image de couverture
+        cover_art = ''
+        if album:
+            cover_art = album.get('cover', '')
+        
+        # Liens externes (Spotify, YouTube Music, Apple Music)
+        external_metadata = music.get('external_metadata', {})
+        spotify_url = ''
+        youtube_url = ''
+        apple_music_url = ''
+        
+        # Spotify
+        if 'spotify' in external_metadata:
+            spotify_data = external_metadata['spotify']
+            if isinstance(spotify_data, dict):
+                spotify_url = spotify_data.get('track', {}).get('external_urls', {}).get('spotify', '')
+            elif isinstance(spotify_data, list) and spotify_data:
+                spotify_url = spotify_data[0].get('track', {}).get('external_urls', {}).get('spotify', '')
+        
+        # YouTube Music
+        if 'youtube' in external_metadata:
+            youtube_data = external_metadata['youtube']
+            if isinstance(youtube_data, dict):
+                video_id = youtube_data.get('vid', '')
+                if video_id:
+                    youtube_url = f"https://music.youtube.com/watch?v={video_id}"
+        
+        # Apple Music
+        if 'apple_music' in external_metadata:
+            apple_data = external_metadata['apple_music']
+            if isinstance(apple_data, dict):
+                apple_music_url = apple_data.get('url', '')
+            elif isinstance(apple_data, list) and apple_data:
+                apple_music_url = apple_data[0].get('url', '')
+        
+        # Construire la réponse
+        return {
+            'title': title,
+            'subtitle': artist_name,
+            'album': album_name,
+            'image': cover_art,
+            'spotify_url': spotify_url,
+            'youtube_url': youtube_url,
+            'apple_music': apple_music_url
+        }
+        
+    except Exception as e:
+        logger.error(f"Erreur ACRCloud: {str(e)}")
+        return {'error': f'Erreur reconnaissance: {str(e)}'}
+
+async def analyze_video(url: str) -> dict:
+    """
+    Analyse une vidéo et identifie la musique
+    """
+    try:
+        # Étape 1: Télécharger l'audio
+        logger.info(f"Analyse de: {url}")
+        audio_file = await asyncio.get_event_loop().run_in_executor(
+            None, download_audio, url
+        )
+        
+        if not audio_file:
+            return {'error': 'Impossible de télécharger l\'audio'}
+        
+        # Étape 2: Identifier la musique avec ACRCloud
+        result = await asyncio.get_event_loop().run_in_executor(
+            None, identify_music_with_acrcloud, audio_file
+        )
+        
+        # Étape 3: Nettoyer le fichier temporaire
+        try:
+            if os.path.exists(audio_file):
+                os.remove(audio_file)
+                logger.info(f"Fichier temporaire supprimé: {audio_file}")
+        except Exception as e:
+            logger.warning(f"Impossible de supprimer {audio_file}: {str(e)}")
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Erreur analyse vidéo: {str(e)}")
+        return {'error': str(e)}
+
+# Routes
+@app.get("/")
+async def root():
+    return {
+        "message": "PasteFind API - ACRCloud Music Recognition",
+        "version": "2.0",
+        "status": "active",
+        "recognition": "ACRCloud"
+    }
 
 @app.post("/api/analyze")
 async def analyze_route(video: VideoURL):
-    result = await identify_song(video)
-    
-    if not result:
-         # Internal error or yt-dlp returned nothing
-         raise HTTPException(status_code=400, detail="Analysis failed: No result")
-    
-    if "error" in result:
-         # Propagate the specific error message to frontend
-         # We return 200 OK because we want to pass the JSON body with error details
-         # OR we can return 422/400. Let's return 200 with error field so frontend logic handles it
-         return JSONResponse(content={"error": result["error"], "title": "", "subtitle": ""})
+    """
+    Endpoint principal pour analyser une vidéo et identifier la musique
+    """
+    try:
+        result = await analyze_video(video.url)
+        
+        if result is None:
+            raise HTTPException(status_code=400, detail="Impossible d'analyser la vidéo")
+        
+        # Si erreur, retourner quand même 200 avec le message d'erreur
+        if 'error' in result:
+            return {
+                'error': result['error'],
+                'title': '',
+                'subtitle': '',
+                'image': '',
+                'spotify_url': '',
+                'youtube_url': '',
+                'apple_music': ''
+            }
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Erreur endpoint /api/analyze: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
-    return JSONResponse(content=result)
+@app.get("/health")
+async def health_check():
+    """
+    Health check pour Render
+    """
+    acrcloud_configured = bool(ACRCLOUD_CONFIG['access_key'] and ACRCLOUD_CONFIG['access_secret'])
+    return {
+        "status": "healthy",
+        "acrcloud_configured": acrcloud_configured,
+        "host": ACRCLOUD_CONFIG['host']
+    }
+
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
