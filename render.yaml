@@ -5,7 +5,7 @@ services:
     env: python
     plan: starter
     rootDir: backend
-    buildCommand: pip install -r requirements.txt
+    buildCommand: bash build.sh
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
     branch: main
     region: oregon
@@ -13,5 +13,7 @@ services:
       - pastefind.com
     envVars:
       - key: PYTHON_VERSION
-        value: 3.9.0
+        value: 3.11.9
+      - key: PATH
+        value: /var/www/pastefind-backend/bin:$PATH
 

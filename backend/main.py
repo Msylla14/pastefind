@@ -27,60 +27,125 @@ templates = Jinja2Templates(directory="templates")
 class VideoURL(BaseModel):
     url: str
 
+from shazamio import Shazam
+import os
+import uuid
+
 async def identify_song(data: VideoURL):
     url = data.url
     logger.info(f"Analyzing URL: {url}")
     
-    # Enhanced yt-dlp options
+    unique_id = str(uuid.uuid4())
+    temp_filename = f"temp_{unique_id}.mp3"
+    
+    # Enhanced yt-dlp options for audio download
     ydl_opts = {
+        'format': 'bestaudio/best',
+        'outtmpl': temp_filename,
         'quiet': True,
         'no_warnings': True,
-        'format': 'bestaudio/best',
         'noplaylist': True,
-        'extract_flat': 'in_playlist', # Extract metadata efficiently, avoid full download parsing if possible
         'geo_bypass': True,
         'nocheckcertificate': True,
-        'ignoreerrors': True, # Don't crash on individual errors
-        'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'ignoreerrors': True,
+        'postprocessors': [{
+            'key': 'FFmpegExtractAudio',
+            'preferredcodec': 'mp3',
+            'preferredquality': '192',
+        }],
     }
 
     try:
-        # Run yt-dlp in executor
+        # 1. Download Audio via yt-dlp
         loop = asyncio.get_event_loop()
-        info = await loop.run_in_executor(None, lambda: yt_dlp.YoutubeDL(ydl_opts).extract_info(url, download=False))
+        await loop.run_in_executor(None, lambda: yt_dlp.YoutubeDL(ydl_opts).download([url]))
         
-        if not info:
-             logger.error("No info returned from yt-dlp")
-             return None
+        # Check if file exists (yt-dlp might append .mp3)
+        final_filename = temp_filename
+        if not os.path.exists(final_filename):
+            final_filename = temp_filename + ".mp3"
+        
+        if not os.path.exists(final_filename):
+             logger.error("Audio download failed")
+             return {"error": "Failed to download audio track"}
 
-        # Handle 'flat' extraction where info might be entries list
-        if 'entries' in info:
-             # It's a playlist or flat extraction, take first entry
-             if len(info['entries']) > 0:
-                 info = info['entries'][0]
+        # 2. Recognize with Shazam
+        shazam = Shazam()
+        out = await shazam.recognize(final_filename)
         
-        # Extract metadata safe defaults
-        title = info.get('title', 'Unknown Title')
-        uploader = info.get('uploader', 'Unknown Artist')
-        thumbnail = info.get('thumbnail', '')
-        webpage_url = info.get('webpage_url', url)
-        
-        # Detect if it looks like an error
-        if not title and not uploader:
-             logger.warning("Extracted info has no title or uploader")
-             return {"error": "Could not extract metadata"}
+        # Cleanup temp file
+        if os.path.exists(final_filename):
+            os.remove(final_filename)
 
-        logger.info(f"Successfully analyzed: {title}")
+        # 3. Parse Result
+        track = out.get('track', {})
+        if not track:
+             return {"error": "No music found or song not recognized"}
+
+        title = track.get('title', 'Unknown Title')
+        subtitle = track.get('subtitle', 'Unknown Artist')
+        images = track.get('images', {})
+        cover_art = images.get('coverarthq', images.get('background', ''))
+        
+        # Links
+        hub = track.get('hub', {})
+        actions = hub.get('actions', [])
+        spotify_url = ""
+        for action in actions:
+            if action.get('type') == 'uri':
+                 spotify_url = action.get('uri', '') # Often returns deep link, verify payload
+        
+        # Shazam often provides provider links in 'sections' or 'hub'. 
+        # For simplicity, we use what we have or search metadata if needed.
+        # shazamio often explicitly gives providers in some versions, but let's stick to basic extraction first.
+        sections = track.get('sections', [])
+        for section in sections:
+            if section.get('type') == 'SONG':
+                for metadata in section.get('metadata', []):
+                     if metadata.get('title') == 'Spotify':
+                          # Sometimes text is the link? vary rare.
+                          pass
+
+        # Construct reliable response
+        # Note: Spotify URL might need a separate lookup if Shazam doesn't provide a direct web link (it often provides 'spotify:track:...')
+        # We can construct web link if we have the ID.
+        
+        web_spotify_url = ""
+        if "spotify:track:" in spotify_url:
+             track_id = spotify_url.split(":")[-1]
+             web_spotify_url = f"https://open.spotify.com/track/{track_id}"
+        
+        youtube_url = ""
+        # Look for youtube link in sections or just use input url as fallback?
+        # Ideally we want the OFFICIAL video found by Shazam.
+        for section in sections:
+             if section.get('type') == 'VIDEO':
+                  youtube_url = section.get('youtubeurl', '')
+                  break
+        
+        if not youtube_url:
+             youtube_url = url # Fallback to source
+
+        logger.info(f"Successfully analyzed: {title} by {subtitle}")
         return {
             "title": title,
-            "subtitle": uploader,
-            "image": thumbnail,
+            "subtitle": subtitle,
+            "image": cover_art,
             "apple_music": "",
-            "spotify_url": "",
-            "youtube_url": webpage_url
+            "spotify_url": web_spotify_url,
+            "youtube_url": youtube_url
         }
+
     except Exception as e:
         logger.error(f"Error during analysis: {e}")
+        # Clean up if failed during processing
+        if 'final_filename' in locals() and os.path.exists(final_filename):
+             os.remove(final_filename)
+        elif 'temp_filename' in locals() and os.path.exists(temp_filename):
+             try:
+                os.remove(temp_filename)
+             except:
+                pass
         return {"error": str(e)}
 
 @app.get("/", response_class=HTMLResponse)

@@ -25,13 +25,21 @@ function App() {
 
   const handleAnalyze = async () => {
     if (!url) return
+
+    // Basic Regex Validation to catch obvious non-links
+    const urlPattern = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/
+    if (!urlPattern.test(url)) {
+      setError('Lien invalide. Veuillez entrer une URL correcte.')
+      return
+    }
+
     setLoading(true)
     setError('')
     setResult(null)
 
     try {
-      // Reverted to hit n8n directly not Python backend
-      const response = await fetch('https://pastefind.com/api/analyze', {
+      // Corrected to hit the backend API directly on api.pastefind.com
+      const response = await fetch('https://api.pastefind.com/api/analyze', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
