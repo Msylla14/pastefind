@@ -1,11 +1,6 @@
 fastapi
-uvicorn[standard]
-jinja2
+uvicorn
+pydantic
+yt-dlp
+pyacrcloud
 python-multipart
-aiohttp
-yt-dlp>=2024.12.06
-shazamio
-starlette
-aiofiles
-pydub
-nest-asyncio

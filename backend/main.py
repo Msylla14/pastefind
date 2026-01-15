@@ -19,7 +19,6 @@ logger = logging.getLogger(__name__)
 app = FastAPI()
 
 # Mount public directory for static assets (bg image)
-# We assume the app is run from the root directory
 if os.path.exists("public"):
     app.mount("/public", StaticFiles(directory="public"), name="public")
 elif os.path.exists("../public"):
@@ -216,13 +215,7 @@ async def analyze_route(video: VideoURL):
 
 @app.post("/api/analyze-file")
 async def analyze_file_route(file: UploadFile = File(...)):
-    # Validate file size (rough check using spool max size or reading chunks? 
-    # FastAPI UploadFile is spooled. We can check size after saving or check Content-Length header)
-    
-    # 50MB limit check
-    # Note: Content-Length header is not always reliable but good first check
-    # For robust checking, we'd count bytes while reading.
-    
+    # Validate file size
     logger.info(f"Receiving file upload: {file.filename}")
     result = await process_file_analysis(file)
     
@@ -233,3 +226,7 @@ async def analyze_file_route(file: UploadFile = File(...)):
          return JSONResponse(content={"error": result["error"], "title": "", "subtitle": ""})
 
     return JSONResponse(content=result)
+
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy", "service": "PasteFind API"}
