@@ -4,3 +4,4 @@ pydantic
 yt-dlp
 pyacrcloud
 python-multipart
+jinja2
