@@ -137,8 +137,6 @@ async def process_url_analysis(data: VideoURL):
     output_template = f"{base_filename}.%(ext)s"
     final_filename = f"{base_filename}.mp3"
     
-    output_template = f"{base_filename}.%(ext)s"
-    final_filename = f"{base_filename}.mp3"
     
     # Base options
     ydl_opts = {
