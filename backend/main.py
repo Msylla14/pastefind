@@ -53,7 +53,7 @@ async def analyze_audio_content(file_path: str, source_url: str = ""):
             logger.error(f"Shazam recognition failed: {e}")
             return {"error": "Music recognition service unavailable."}
         
-        # Parse Result
+    # Parse Result
         track = out.get('track', {})
         if not track:
              return {"error": "No music recognized."}
@@ -61,40 +61,65 @@ async def analyze_audio_content(file_path: str, source_url: str = ""):
         title = track.get('title', 'Unknown Title')
         subtitle = track.get('subtitle', 'Unknown Artist')
         images = track.get('images', {})
-        cover_art = images.get('coverarthq', images.get('background', ''))
+        cover_art = images.get('coverarthq', images.get('coverart', images.get('background', '')))
         
-        # Links
+        # Links - Parse Hub Actions & Providers
         hub = track.get('hub', {})
+        
+        # Initialize links
+        spotify_url = ""
+        youtube_url = ""
+        apple_music_url = ""
+
+        # 1. Check top-level actions (often Apple Music)
         actions = hub.get('actions', [])
-        spotify_uri = ""
         for action in actions:
             if action.get('type') == 'uri':
-                 spotify_uri = action.get('uri', '')
+                 uri = action.get('uri', '')
+                 if "apple" in uri or "itunes" in uri:
+                     apple_music_url = uri
+
+        # 2. Check Providers (Spotify, YouTube Music, etc.)
+        providers = hub.get('providers', [])
+        for provider in providers:
+            p_type = provider.get('type', '').upper()
+            p_actions = provider.get('actions', [])
+            for action in p_actions:
+                uri = action.get('uri', '')
+                if p_type == 'SPOTIFY':
+                    if 'spotify:search:' in uri:
+                        query = uri.split(':')[-1]
+                        spotify_url = f"https://open.spotify.com/search/{query}"
+                    elif 'spotify:track:' in uri:
+                        track_id = uri.split(':')[-1]
+                        spotify_url = f"https://open.spotify.com/track/{track_id}"
+                elif p_type == 'YOUTUBEMUSIC' and not youtube_url:
+                     youtube_url = uri
         
-        # Construct reliable response
-        web_spotify_url = ""
-        if "spotify:track:" in spotify_uri:
-             track_id = spotify_uri.split(":")[-1]
-             web_spotify_url = f"https://open.spotify.com/track/{track_id}"
-        
-        # Try to find YouTube URL in sections
+        # 3. Check Sections for official Video
         sections = track.get('sections', [])
-        youtube_url = ""
         for section in sections:
              if section.get('type') == 'VIDEO':
-                  youtube_url = section.get('youtubeurl', '')
-                  break
+                  yt_vid_url = section.get('youtubeurl', '')
+                  if yt_vid_url:
+                      youtube_url = yt_vid_url
+                      break
         
         if not youtube_url and source_url:
-             youtube_url = source_url # Fallback to source URL if no official video found
+             # Only fallback to source if it looks like a music video platform, otherwise empty?
+             # User requested "option vers les son origine". If we don't have a YouTube link found, 
+             # returning the source (Facebook info) is less useful than specific YouTube search/video.
+             # But let's keep source_url as last resort fallback for "YouTube" button if source WAS youtube.
+             if "youtube" in source_url or "youtu.be" in source_url:
+                youtube_url = source_url
 
         logger.info(f"Successfully analyzed: {title} by {subtitle}")
         return {
             "title": title,
             "subtitle": subtitle,
             "image": cover_art,
-            "apple_music": "", # Can be added if found in hub/providers
-            "spotify_url": web_spotify_url,
+            "apple_music": apple_music_url,            
+            "spotify_url": spotify_url,
             "youtube_url": youtube_url
         }
     except Exception as e:
@@ -112,6 +137,10 @@ async def process_url_analysis(data: VideoURL):
     output_template = f"{base_filename}.%(ext)s"
     final_filename = f"{base_filename}.mp3"
     
+    output_template = f"{base_filename}.%(ext)s"
+    final_filename = f"{base_filename}.mp3"
+    
+    # Base options
     ydl_opts = {
         'format': 'bestaudio/best',
         'outtmpl': output_template,
@@ -121,18 +150,34 @@ async def process_url_analysis(data: VideoURL):
         'geo_bypass': True,
         'nocheckcertificate': True,
         'ignoreerrors': False,
-        'http_headers': {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.5',
-            'Referer': 'https://www.google.com/',
-        },
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',
             'preferredcodec': 'mp3',
             'preferredquality': '192',
         }],
     }
+
+    # Domain-specific configuration
+    if "youtube.com" in url or "youtu.be" in url:
+        # YouTube Shorts often require Android client emulation
+        ydl_opts['extractor_args'] = {
+            'youtube': {
+                'player_client': ['android', 'web']
+            }
+        }
+        ydl_opts['http_headers'] = {
+            'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+        }
+    else:
+        # Facebook/TikTok/Others often prefer Desktop UA
+        ydl_opts['http_headers'] = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Referer': 'https://www.google.com/',
+        }
 
     try:
         loop = asyncio.get_event_loop()
