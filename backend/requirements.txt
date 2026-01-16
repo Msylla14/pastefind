@@ -1,7 +1,7 @@
 fastapi
 uvicorn
 pydantic
-yt-dlp
+yt-dlp>=2024.1.15
 pyacrcloud
 python-multipart
 jinja2

@@ -311,27 +311,12 @@
     </p>
 
     <div class="glass-panel">
-      <div class="tab-container">
-        <div class="tab active" onclick="switchTab('url')">🔗 Lien Vidéo</div>
-        <div class="tab" onclick="switchTab('file')">📁 Fichier Local</div>
-      </div>
-
-      <!-- URL TAB -->
-      <div id="tab-url" class="tab-content active">
+      <!-- URL INPUT -->
+      <div id="tab-url" class="tab-content active" style="display: block;">
         <div class="input-group">
           <input type="text" id="videoUrl" placeholder="Colle un lien YouTube, Facebook, TikTok...">
         </div>
         <button onclick="analyzeUrl()" id="btnUrl" class="btn-main">ANALYSER LE LIEN</button>
-      </div>
-
-      <!-- FILE TAB -->
-      <div id="tab-file" class="tab-content">
-        <div class="upload-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
-          <p id="fileLabel">Glisse ton fichier ici ou clique pour parcourir</p>
-          <p style="font-size: 10px; opacity: 0.5; margin-top: 5px;">MP3, MP4, WAV, MOV (Max 50MB)</p>
-        </div>
-        <input type="file" id="fileInput" accept="audio/*,video/*" onchange="handleFileSelect(this)">
-        <button onclick="analyzeFile()" id="btnFile" class="btn-main" disabled>ANALYSER LE FICHIER</button>
       </div>
 
       <!-- ERROR MESSAGE -->
@@ -358,58 +343,6 @@
     // const API_BASE = "http://localhost:8000"; // Local
     const API_BASE = "https://pastefind.onrender.com"; // Prod
 
-    let selectedFile = null;
-
-    // --- TABS ---
-    function switchTab(tab) {
-      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-      document.getElementById('errorMsg').style.display = 'none';
-
-      if (tab === 'url') {
-        document.querySelector('.tab:nth-child(1)').classList.add('active');
-        document.getElementById('tab-url').classList.add('active');
-      } else {
-        document.querySelector('.tab:nth-child(2)').classList.add('active');
-        document.getElementById('tab-file').classList.add('active');
-      }
-    }
-
-    // --- FILE HANDLING ---
-    function handleFileSelect(input) {
-      const file = input.files[0];
-      processFile(file);
-    }
-
-    const dropZone = document.getElementById('dropZone');
-    dropZone.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      dropZone.classList.add('dragover');
-    });
-    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-    dropZone.addEventListener('drop', (e) => {
-      e.preventDefault();
-      dropZone.classList.remove('dragover');
-      if (e.dataTransfer.files.length) {
-        processFile(e.dataTransfer.files[0]);
-      }
-    });
-
-    function processFile(file) {
-      if (!file) return;
-
-      // Validation (50MB)
-      if (file.size > 50 * 1024 * 1024) {
-        showError("Fichier trop volumineux (Max 50MB)");
-        return;
-      }
-
-      selectedFile = file;
-      document.getElementById('fileLabel').innerText = `📄 ${file.name} (${(file.size / 1024 / 1024).toFixed(1)} MB)`;
-      document.getElementById('btnFile').disabled = false;
-      document.getElementById('errorMsg').style.display = 'none';
-    }
-
     // --- API CALLS ---
 
     async function analyzeUrl() {
@@ -426,25 +359,6 @@
         handleResponse(response);
       } catch (e) {
         showError("Erreur de connexion au serveur.");
-        stopLoading();
-      }
-    }
-
-    async function analyzeFile() {
-      if (!selectedFile) return showError("Aucun fichier sélectionné.");
-
-      startLoading("Upload et analyse du fichier... (Cela peut prendre un moment)");
-      const formData = new FormData();
-      formData.append("file", selectedFile);
-
-      try {
-        const response = await fetch(`${API_BASE}/api/analyze-file`, {
-          method: 'POST',
-          body: formData
-        });
-        handleResponse(response);
-      } catch (e) {
-        showError("Erreur lors de l'envoi du fichier.");
         stopLoading();
       }
     }
@@ -496,14 +410,11 @@
       document.getElementById('loader').style.display = 'block';
       document.getElementById('statusText').innerText = msg;
       document.getElementById('btnUrl').disabled = true;
-      document.getElementById('btnFile').disabled = true;
     }
 
     function stopLoading() {
       document.getElementById('loader').style.display = 'none';
       document.getElementById('btnUrl').disabled = false;
-      document.getElementById('btnFile').disabled = false; // Re-enable if file present?
-      if (selectedFile) document.getElementById('btnFile').disabled = false;
     }
 
     function showError(msg) {
