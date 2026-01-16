@@ -68,13 +68,13 @@ def analyze_audio_with_acrcloud(file_path: str):
         if status.get('code') != 0:
             msg = status.get('msg', 'Unknown error')
             logger.warning(f"ACRCloud No Match/Error: {msg}")
-            return {"error": f"No match found ({msg})"}
+            return {"error": f"Aucune correspondance trouvée ({msg})"}
 
         metadata = result.get('metadata', {})
         music_list = metadata.get('music', [])
         
         if not music_list:
-            return {"error": "No music identified in the audio."}
+            return {"error": "Aucune musique identifiée dans l'audio."}
 
         # Take first result
         music = music_list[0]
@@ -152,6 +152,9 @@ def download_audio(url: str):
         'quiet': False,
         'no_warnings': False,
         'extract_flat': False,
+        'postprocessor_args': [
+            '-t', '60'
+        ],
         
         # Anti-detection YouTube
         'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',

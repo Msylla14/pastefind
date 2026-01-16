@@ -2,7 +2,5 @@ fastapi
 uvicorn
 pydantic
 yt-dlp>=2024.1.15
-shazamio
 python-multipart
-pydub
-ffmpeg-python
+
