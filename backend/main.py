@@ -193,38 +193,43 @@ def download_audio(url: str):
             logger.error(f"Erreur inconnue: {error_msg}")
             return None
 
+from fastapi import FastAPI, Request, HTTPException, UploadFile, File
+import shutil
+
+# ... existing imports ...
+
+# [Keep existing Helper Functions: analyze_audio_with_acrcloud, download_audio]
+
 async def process_url_analysis(data: VideoURL):
     url = data.url
-    logger.info(f"📥 Début téléchargement: {url}")
+    logger.info(f"📥 Analyse demande URL: {url}")
     
-    # Run download in executor
+    # 🚨 STRICT RULE: Block YouTube Server-Side
+    if "youtube.com" in url or "youtu.be" in url:
+        logger.info("🚫 YouTube URL detected - Rejected server-side processing")
+        return {
+            "error": "YouTube bloqué côté serveur. Veuillez utiliser le bouton 'Upload Fichier' pour analyser cette vidéo (téléchargez-la d'abord)."
+        }
+
+    # Run download in executor for other platforms (Facebook, TikTok, etc.)
     audio_file = await asyncio.get_event_loop().run_in_executor(None, download_audio, url)
 
     if not audio_file:
         logger.error("❌ Téléchargement échoué")
-        return {'error': 'Impossible de télécharger l\'audio (YouTube block/Error)'}
+        return {'error': 'Impossible de télécharger l\'audio (Lien invalide ou protégé)'}
 
     logger.info(f"✅ Audio téléchargé: {audio_file}")
-    logger.info(f"🎵 Envoi à ACRCloud...")
-
+    
     try:
         # Run ACRCloud analysis in executor
         result = await asyncio.get_event_loop().run_in_executor(None, analyze_audio_with_acrcloud, audio_file)
-        logger.info(f"📊 Résultat ACRCloud: {result}")
-        
-        # Fallback for youtube_url if ACRCloud didn't find one but source is YT
-        if "error" not in result and not result.get("youtube_url") and ("youtube.com" in url or "youtu.be" in url):
-            result["youtube_url"] = url
-            
         return result
     finally:
-        # Cleanup
         if audio_file and os.path.exists(audio_file):
             try:
                 os.remove(audio_file)
-                logger.info(f"🗑️ Fichier temporaire supprimé: {audio_file}")
-            except Exception as e:
-                logger.warning(f"Failed to delete {audio_file}: {e}")
+            except:
+                pass
 
 # --- Routes ---
 
@@ -238,8 +243,48 @@ async def analyze_route(video: VideoURL):
     if not result:
          raise HTTPException(status_code=400, detail="Analysis failed")
     if "error" in result:
-         return JSONResponse(content=result) # Return error as JSON, not 500
+         return JSONResponse(content=result)
     return JSONResponse(content=result)
+
+@app.post("/api/analyze-file")
+async def analyze_file_route(file: UploadFile = File(...)):
+    """
+    Endpoint for local file analysis (mp3, mp4, wav).
+    Required for YouTube videos (client-side download -> server upload).
+    """
+    allowed_extensions = {"mp3", "wav", "mp4", "m4a"}
+    filename = file.filename
+    ext = filename.split(".")[-1].lower() if "." in filename else ""
+    
+    if ext not in allowed_extensions:
+        return JSONResponse(content={"error": f"Format non supporté ({ext}). Utilisez mp3, wav ou mp4."}, status_code=400)
+    
+    # Generate temp file
+    unique_id = str(uuid.uuid4())
+    temp_path = f"/tmp/{unique_id}.{ext}" if os.path.exists("/tmp") else f"temp_upload_{unique_id}.{ext}"
+    
+    try:
+        with open(temp_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+            
+        logger.info(f"📂 Fichier reçu: {filename} -> {temp_path}")
+        
+        # Run Analysis
+        result = await asyncio.get_event_loop().run_in_executor(None, analyze_audio_with_acrcloud, temp_path)
+        return JSONResponse(content=result)
+        
+    except Exception as e:
+        logger.error(f"Upload/Analysis Error: {e}")
+        return JSONResponse(content={"error": f"Erreur traitement fichier: {str(e)}"}, status_code=500)
+    finally:
+        if os.path.exists(temp_path):
+            try:
+                os.remove(temp_path)
+                logger.info("🗑️ Fichier upload supprimé")
+            except:
+                pass
+
+@app.get("/health")
 
 @app.get("/health")
 async def health_check():
