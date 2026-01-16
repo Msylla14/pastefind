@@ -22,12 +22,9 @@ const TRANSLATIONS = {
   fr: {
     placeholder: "Collez un lien Facebook/TikTok...",
     or_upload: "OU UPLOADEZ UN FICHIER (MP3/MP4)",
-    or_mic: "OU MICROPHONE",
     analyze_btn: "ANALYSER",
     analyzing: "ANALYSE EN COURS...",
-    recording: "ENREGISTREMENT... (10s max)",
     error_server: "Erreur connexion serveur. Veuillez réessayer.",
-    error_mic: "Erreur micro. Vérifiez les permissions.",
     youtube_hint: "ℹ️ Astuce : Téléchargez la vidéo avec un outil externe et uploadez le fichier ici.",
     title_unknown: "Inconnu",
     artist_unknown: "Artiste inconnu",
@@ -36,12 +33,9 @@ const TRANSLATIONS = {
   en: {
     placeholder: "Paste Facebook/TikTok link...",
     or_upload: "OR UPLOAD A FILE (MP3/MP4)",
-    or_mic: "OR MICROPHONE",
     analyze_btn: "ANALYZE",
     analyzing: "ANALYZING...",
-    recording: "RECORDING... (10s max)",
     error_server: "Server connection error. Please try again.",
-    error_mic: "Microphone error. Check permissions.",
     youtube_hint: "ℹ️ Hint: Download the video externally and upload the file here.",
     title_unknown: "Unknown",
     artist_unknown: "Unknown Artist",
@@ -56,82 +50,9 @@ const t = TRANSLATIONS[lang]
 function App() {
   const [url, setUrl] = useState('')
   const [loading, setLoading] = useState(false)
-  const [recording, setRecording] = useState(false)
   const [result, setResult] = useState(null)
   const [error, setError] = useState('')
   const [file, setFile] = useState(null)
-
-  // Microphone Logic
-  const startRecording = async () => {
-    setError('')
-    setResult(null)
-    setUrl('')
-    setFile(null)
-
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      const mediaRecorder = new MediaRecorder(stream)
-      const chunks = []
-
-      mediaRecorder.ondataavailable = (e) => chunks.push(e.data)
-
-      mediaRecorder.onstop = async () => {
-        const blob = new Blob(chunks, { type: 'audio/webm' })
-        await handleMicAnalyze(blob)
-
-        // Stop all tracks
-        stream.getTracks().forEach(track => track.stop())
-      }
-
-      mediaRecorder.start()
-      setRecording(true)
-
-      // Auto-stop after 8 seconds
-      setTimeout(() => {
-        if (mediaRecorder.state === 'recording') {
-          mediaRecorder.stop()
-          setRecording(false)
-        }
-      }, 8000)
-
-    } catch (err) {
-      console.error("Mic Error:", err)
-      setError(t.error_mic)
-    }
-  }
-
-  const handleMicAnalyze = async (audioBlob) => {
-    setLoading(true)
-    try {
-      const formData = new FormData()
-      formData.append('file', audioBlob, 'recording.webm')
-
-      const response = await fetch('https://pastefind.onrender.com/api/analyze-mic', {
-        method: 'POST',
-        body: formData
-      })
-
-      if (!response.ok) throw new Error('Mic Analysis Failed')
-
-      const data = await response.json()
-      if (data.error) {
-        setError(data.error)
-      } else {
-        setResult({
-          title: data.title || t.title_unknown,
-          artist: data.subtitle || t.artist_unknown,
-          cover_url: data.image || 'https://via.placeholder.com/300x300?text=No+Cover',
-          youtube_url: data.youtube_url || '#',
-          spotify_url: data.spotify_url || '#'
-        })
-      }
-    } catch (err) {
-      console.error(err)
-      setError(t.error_server)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const handleAnalyze = async () => {
     setLoading(true)
@@ -238,59 +159,28 @@ function App() {
               setUrl(e.target.value)
               setFile(null)
             }}
-            disabled={!!file || recording}
+            disabled={!!file}
           />
 
-          <div className="actions-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '10px' }}>
-            <div className="file-upload-wrapper" style={{ flex: 1 }}>
-              <p style={{ margin: '5px 0', fontSize: '0.8em', opacity: 0.8 }}>{t.or_upload}</p>
-              <input
-                type="file"
-                accept=".mp3,.wav,.mp4,.m4a"
-                onChange={handleFileChange}
-                className="file-input"
-                style={{ color: 'white' }}
-                disabled={recording}
-              />
-            </div>
-
-            {/* Micro Button */}
-            <button
-              className={`mic-btn ${recording ? 'recording' : ''}`}
-              onClick={startRecording}
-              disabled={loading || recording}
-              title="Listen (Microphone)"
-              style={{
-                background: 'rgba(0,0,0,0.5)',
-                border: '2px solid #39ff14', // Neon Green
-                borderRadius: '50%',
-                width: '50px',
-                height: '50px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginLeft: '15px',
-                boxShadow: recording ? '0 0 15px #39ff14' : 'none',
-                transition: 'all 0.3s ease'
-              }}
-            >
-              {/* Simple Mic SVG Icon */}
-              <svg viewBox="0 0 24 24" fill="#39ff14" width="24px" height="24px">
-                <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.66 9 5v6c0 1.66 1.34 3 3 3z" />
-                <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
-              </svg>
-            </button>
+          <div className="file-upload-wrapper" style={{ marginTop: '10px' }}>
+            <p style={{ margin: '5px 0', fontSize: '0.8em', opacity: 0.8 }}>{t.or_upload}</p>
+            <input
+              type="file"
+              accept=".mp3,.wav,.mp4,.m4a"
+              onChange={handleFileChange}
+              className="file-input"
+              style={{ color: 'white' }}
+            />
           </div>
         </div>
 
         <button
           className="analyze-btn"
           onClick={handleAnalyze}
-          disabled={loading || recording || (!url && !file)}
+          disabled={loading || (!url && !file)}
           style={{ marginTop: '15px' }}
         >
-          {loading ? t.analyzing : (recording ? t.recording : t.analyze_btn)}
+          {loading ? t.analyzing : t.analyze_btn}
         </button>
 
         {error && (
@@ -341,5 +231,4 @@ function App() {
     </div>
   )
 }
-
 export default App

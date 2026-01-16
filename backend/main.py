@@ -290,40 +290,4 @@ async def health_check():
     configured = bool(ACRCLOUD_CONFIG['access_key'])
     return {"status": "healthy", "service": "PasteFind API (ACRCloud)", "acr_configured": configured}
 
-@app.post("/api/analyze-mic")
-async def analyze_mic_route(file: UploadFile = File(...)):
-    """
-    Endpoint for microphone audio analysis.
-    Accepts blob/webm/wav from browser MediaRecorder.
-    """
-    # Allow more formats for mic (webm is common)
-    allowed_extensions = {"webm", "ogg", "wav", "mp3", "mp4"}
-    
-    # Check mime type or filename
-    filename = file.filename or "recording.webm"
-    ext = filename.split(".")[-1].lower() if "." in filename else "webm"
-    
-    # Generate temp file
-    unique_id = str(uuid.uuid4())
-    temp_path = f"/tmp/{unique_id}.{ext}" if os.path.exists("/tmp") else f"temp_mic_{unique_id}.{ext}"
-    
-    try:
-        with open(temp_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-            
-        logger.info(f"🎙️ Audio Micro reçu: {temp_path}")
-        
-        # Run Analysis
-        result = await asyncio.get_event_loop().run_in_executor(None, analyze_audio_with_acrcloud, temp_path)
-        return JSONResponse(content=result)
-        
-    except Exception as e:
-        logger.error(f"Mic Analysis Error: {e}")
-        return JSONResponse(content={"error": f"Erreur analyse micro: {str(e)}"}, status_code=500)
-    finally:
-        if os.path.exists(temp_path):
-            try:
-                os.remove(temp_path)
-                logger.info("🗑️ Fichier micro supprimé")
-            except:
-                pass
+
