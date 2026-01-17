@@ -1,7 +1,7 @@
 fastapi
 uvicorn
 pydantic
-yt-dlp>=2024.1.15
+yt-dlp>=2025.01.12
 pyacrcloud
 python-multipart
 python-multipart

@@ -21,27 +21,32 @@ function AnimatedSphere() {
 const TRANSLATIONS = {
   fr: {
     placeholder: "Collez un lien Facebook/TikTok...",
-    or_upload: "OU UPLOADEZ UN FICHIER (MP3/MP4)",
+    upload_title: "GLISSEZ VOTRE FICHIER ICI",
+    upload_subtitle: "ou cliquez pour parcourir (MP3, MP4)",
     analyze_btn: "ANALYSER",
     analyzing: "ANALYSE EN COURS...",
     error_server: "Erreur connexion serveur. Veuillez réessayer.",
-    youtube_hint: "ℹ️ Astuce : Téléchargez la vidéo avec un outil externe et uploadez le fichier ici.",
+    youtube_error: "YouTube bloque l'extraction directe. Téléchargez la vidéo et utilisez l'Upload Local.",
     title_unknown: "Inconnu",
     artist_unknown: "Artiste inconnu",
     invalid_link: "Lien invalide. Veuillez entrer une URL correcte."
   },
   en: {
     placeholder: "Paste Facebook/TikTok link...",
-    or_upload: "OR UPLOAD A FILE (MP3/MP4)",
+    upload_title: "DROP FILE HERE",
+    upload_subtitle: "or click to browse (MP3, MP4)",
     analyze_btn: "ANALYZE",
     analyzing: "ANALYZING...",
     error_server: "Server connection error. Please try again.",
-    youtube_hint: "ℹ️ Hint: Download the video externally and upload the file here.",
+    youtube_error: "YouTube blocks direct extraction. Download video and use Local Upload.",
     title_unknown: "Unknown",
     artist_unknown: "Unknown Artist",
     invalid_link: "Invalid link. Please enter a correct URL."
   }
 }
+
+// Default Vinyl Cover (Stylized SVG Data URI)
+const DEFAULT_COVER = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:%23333;stop-opacity:1" /><stop offset="100%" style="stop-color:%23000;stop-opacity:1" /></linearGradient></defs><circle cx="250" cy="250" r="240" fill="url(%23g)" stroke="%23555" stroke-width="5"/><circle cx="250" cy="250" r="100" fill="%238352FD"/><circle cx="250" cy="250" r="10" fill="%23fff"/><path d="M 250 250 m -90, 0 a 90,90 0 1,0 180,0 a 90,90 0 1,0 -180,0" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="2"/><path d="M 250 250 m -160, 0 a 160,160 0 1,0 320,0 a 160,160 0 1,0 -320,0" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="2"/></svg>`;
 
 // Simple Auto-Detect
 const lang = navigator.language.startsWith('fr') ? 'fr' : 'en'
@@ -86,7 +91,7 @@ function App() {
 
         // Frontend YouTube Block
         if (url.includes('youtube.com') || url.includes('youtu.be')) {
-          setError("YouTube est bloqué côté serveur. Veuillez utiliser l’upload de fichier.")
+          setError(t.youtube_error)
           setLoading(false)
           return
         }
@@ -114,7 +119,7 @@ function App() {
       setResult({
         title: data.title || t.title_unknown,
         artist: data.subtitle || t.artist_unknown,
-        cover_url: data.image || 'https://via.placeholder.com/300x300?text=No+Cover',
+        cover_url: data.image || DEFAULT_COVER,
         youtube_url: data.youtube_url || '#',
         spotify_url: data.spotify_url || '#'
       })
@@ -130,7 +135,7 @@ function App() {
   const handleFileChange = (e) => {
     if (e.target.files[0]) {
       setFile(e.target.files[0])
-      setUrl('')
+      setUrl('') // clear URL if file selected
     }
   }
 
@@ -148,29 +153,40 @@ function App() {
       </div>
 
       <div className="overlay-container">
-        {/* Upload Mode Switcher or Simple Dual Input */}
-        <div className="input-group">
-          <input
-            type="text"
-            placeholder={t.placeholder}
-            className="glass-input"
-            value={url}
-            onChange={(e) => {
-              setUrl(e.target.value)
-              setFile(null)
-            }}
-            disabled={!!file}
-          />
 
-          <div className="file-upload-wrapper" style={{ marginTop: '10px' }}>
-            <p style={{ margin: '5px 0', fontSize: '0.8em', opacity: 0.8 }}>{t.or_upload}</p>
+        {/* 1. URL Input */}
+        <input
+          type="text"
+          placeholder={t.placeholder}
+          className="glass-input"
+          value={url}
+          onChange={(e) => {
+            setUrl(e.target.value)
+            setFile(null)
+          }}
+          disabled={!!file}
+        />
+
+        {/* 2. HUGE UPLOAD ZONE */}
+        <div className="upload-wrapper">
+          <div className={`upload-zone ${file ? 'has-file' : ''}`}>
             <input
               type="file"
               accept=".mp3,.wav,.mp4,.m4a"
               onChange={handleFileChange}
-              className="file-input"
-              style={{ color: 'white' }}
+              className="upload-input-hidden"
             />
+            <div className="upload-icon-large">
+              {file ? '📂' : '☁️'}
+            </div>
+            {file ? (
+              <div className="file-name-display">{file.name}</div>
+            ) : (
+              <>
+                <div className="upload-text">{t.upload_title}</div>
+                <div className="upload-subtext">{t.upload_subtitle}</div>
+              </>
+            )}
           </div>
         </div>
 
@@ -178,7 +194,7 @@ function App() {
           className="analyze-btn"
           onClick={handleAnalyze}
           disabled={loading || (!url && !file)}
-          style={{ marginTop: '15px' }}
+          style={{ marginTop: '20px', width: '100%', padding: '18px' }}
         >
           {loading ? t.analyzing : t.analyze_btn}
         </button>
@@ -186,18 +202,13 @@ function App() {
         {error && (
           <div className="error-box" style={{
             background: 'rgba(255,0,0,0.2)',
-            padding: '10px',
-            borderRadius: '8px',
+            padding: '15px',
+            borderRadius: '12px',
             marginTop: '10px',
-            border: '1px solid rgba(255,100,100,0.5)'
+            border: '1px solid rgba(255,100,100,0.5)',
+            width: '100%'
           }}>
             <p className="error-text">{error}</p>
-            {/* Suggest File Upload if YouTube error */}
-            {error.includes("YouTube") && (
-              <p style={{ fontSize: '0.8em', marginTop: '5px' }}>
-                {t.youtube_hint}
-              </p>
-            )}
           </div>
         )}
 
@@ -207,7 +218,7 @@ function App() {
               src={result.cover_url}
               alt="Cover"
               className="cover-art"
-              onError={(e) => { e.target.src = 'https://via.placeholder.com/300x300?text=No+Cover' }}
+              onError={(e) => { e.target.src = DEFAULT_COVER }}
             />
             <div className="song-info">
               <h3 translate="no" className="notranslate">{result.title}</h3>

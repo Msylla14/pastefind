@@ -49,6 +49,37 @@ class VideoURL(BaseModel):
 
 # --- Helper Functions ---
 
+def clean_url(url: str) -> str:
+    """
+    Removes tracking parameters like 'fbclid', 'si', etc. from URLs.
+    Essential for Facebook/Instagram/Spotify links to work with yt-dlp.
+    """
+    try:
+        parsed = urllib.parse.urlparse(url)
+        query_params = urllib.parse.parse_qs(parsed.query)
+        
+        # forbidden_params = ['fbclid', 'si', 'igsh']
+        # Remove them
+        keys_to_remove = [k for k in query_params if k.startswith('fbclid') or k in ['si', 'igsh']]
+        for k in keys_to_remove:
+            del query_params[k]
+            
+        new_query = urllib.parse.urlencode(query_params, doseq=True)
+        
+        # Reconstruct URL
+        cleaned = urllib.parse.urlunparse((
+            parsed.scheme,
+            parsed.netloc,
+            parsed.path,
+            parsed.params,
+            new_query,
+            parsed.fragment
+        ))
+        return cleaned
+    except Exception as e:
+        logger.warning(f"URL Cleaning failed: {e}")
+        return url
+
 def analyze_audio_with_acrcloud(file_path: str):
     """
     Analyzes audio using ACRCloud SDK (Synchronous)
@@ -208,8 +239,12 @@ async def process_url_analysis(data: VideoURL):
     if "youtube.com" in url or "youtu.be" in url:
         logger.info("🚫 YouTube URL detected - Rejected server-side processing")
         return {
-            "error": "YouTube bloqué côté serveur. Veuillez utiliser le bouton 'Upload Fichier' pour analyser cette vidéo (téléchargez-la d'abord)."
+            "error": "YouTube bloque l'extraction directe. Téléchargez la vidéo et utilisez l'Upload Local."
         }
+    
+    # 🧹 Clean URL (Remove Tracking Params esp. for FB/Insta)
+    url = clean_url(url)
+    logger.info(f"🧹 URL Nettoyée: {url}")
 
     # Run download in executor for other platforms (Facebook, TikTok, etc.)
     audio_file = await asyncio.get_event_loop().run_in_executor(None, download_audio, url)
