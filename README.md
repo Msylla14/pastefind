@@ -1,39 +1,54 @@
-# PasteFind
+# 🎵 PasteFind - Unified Architecture
+**Version 2.0 (Stable)**
 
-## How to Run
+## Architecture Overview
 
-### Frontend (The 3D Interface)
-1. Open a terminal.
-2. Run `npm install` (only needed once).
-3. Run `npm run dev`.
-4. Open [http://localhost:5173](http://localhost:5173).
+PasteFind uses a unified architecture separating the frontend (GitHub Pages) and the backend (Render).
 
-### Backend (The API)
-1. Open a new terminal.
-2. Run `pip install -r requirements.txt` (only needed once).
-3. Run `uvicorn backend.main:app --reload`.
-4. The API will be available at [http://localhost:8000](http://localhost:8000).
+### 1. Frontend (GitHub Pages)
+- **Role**: Serves the React Application (UI).
+- **Build Tool**: Vite.
+- **Output Directory**: `docs/` (Configured in `vite.config.js`).
+- **URL**: `https://pastefind.com` (Mapped to GitHub Pages `docs/` folder via CNAME).
+- **Features**:
+  - **Mode Toggle**: Link vs File Upload.
+  - **Microphone Button**: UI placeholder (Backend 501).
+  - **Logic**: Calls `https://api.pastefind.com` for analysis.
 
-## Project Structure
-- `src/`: React Frontend code.
-- `backend/`: FastAPI Backend code.
+### 2. Backend (Render)
+- **Role**: JSON API ONLY (No HTML serving).
+- **Framework**: FastAPI (Python).
+- **URL**: `https://api.pastefind.com` (Mapped to Render Service).
+- **Endpoints**:
+  - `GET /` -> JSON Status & Version.
+  - `GET /health` -> Health check.
+  - `POST /api/analyze` -> Analyze YouTube/Facebook/TikTok links.
+  - `POST /api/analyze-file` -> Analyze uploaded MP3/MP4/WAV files.
+  - `POST /api/analyze-mic` -> Placeholder (Returns 501 Not Implemented).
 
----
-Original Vite Readme below:
+## 🚀 Deployment Instructions
 
-# PasteFind
+### Frontend (Update UI)
+1. **Develop**: Edit `src/App.jsx`.
+2. **Build**: Run `npm run build`. This outputs to the `docs/` folder.
+3. **Deploy**:
+   ```bash
+   git add .
+   git commit -m "Update Frontend"
+   git push origin main
+   ```
+   *GitHub Pages is configured to serve from the `/docs` folder on the `main` branch.*
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+### Backend (Update Logic)
+1. **Develop**: Edit `backend/main.py`.
+2. **Deploy**:
+   ```bash
+   git add backend/
+   git commit -m "Update Backend"
+   git push origin main
+   ```
+   *Render automatically deploys changes to the `backend/` directory.*
 
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## ⚠️ Important Notes
+- **DO NOT** try to access the backend URL (`api.pastefind.com`) in a browser expecting to see the App. It only returns JSON.
+- **YouTube Blocking**: YouTube links are blocked client-side to protect the server IP. Users must download the video and use "File Upload" mode.

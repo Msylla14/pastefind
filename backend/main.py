@@ -1,8 +1,6 @@
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse
-from fastapi.templating import Jinja2Templates
-from fastapi.staticfiles import StaticFiles
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from acrcloud.recognizer import ACRCloudRecognizer
 import yt_dlp
@@ -27,11 +25,8 @@ ACRCLOUD_CONFIG = {
     'timeout': 30
 }
 
-# Mount public directory
-if os.path.exists("public"):
-    app.mount("/public", StaticFiles(directory="public"), name="public")
-elif os.path.exists("../public"):
-    app.mount("/public", StaticFiles(directory="../public"), name="public")
+# Mount public directory - REMOVED (Frontend handled by GitHub Pages)
+
 
 # CORS
 app.add_middleware(
@@ -42,7 +37,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-templates = Jinja2Templates(directory="templates")
+
 
 class VideoURL(BaseModel):
     url: str
@@ -268,9 +263,9 @@ async def process_url_analysis(data: VideoURL):
 
 # --- Routes ---
 
-@app.get("/", response_class=HTMLResponse)
-async def home(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+@app.get("/")
+async def home():
+    return {"status": "PasteFind API is running", "version": "2.0", "docs_url": "/docs"}
 
 @app.post("/api/analyze")
 async def analyze_route(video: VideoURL):
@@ -280,6 +275,13 @@ async def analyze_route(video: VideoURL):
     if "error" in result:
          return JSONResponse(content=result)
     return JSONResponse(content=result)
+
+@app.post("/api/analyze-mic")
+async def analyze_mic_route(request: Request):
+    """
+    Placeholder for future mic analysis.
+    """
+    return JSONResponse(content={"message": "Not implemented yet. Use File Upload."}, status_code=501)
 
 @app.post("/api/analyze-file")
 async def analyze_file_route(file: UploadFile = File(...)):

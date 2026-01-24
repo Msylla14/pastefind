@@ -173,7 +173,8 @@
 .upload-zone {
   position: relative;
   width: 100%;
-  padding: 30px 20px; /* Big clickable area */
+  padding: 30px 20px;
+  /* Big clickable area */
   border: 2px dashed rgba(255, 255, 255, 0.3);
   border-radius: 20px;
   background: rgba(255, 255, 255, 0.05);
@@ -186,7 +187,8 @@
   overflow: hidden;
 }
 
-.upload-zone:hover, .upload-zone.has-file {
+.upload-zone:hover,
+.upload-zone.has-file {
   background: rgba(255, 255, 255, 0.1);
   border-color: #8352FD;
   box-shadow: 0 0 20px rgba(131, 82, 253, 0.15);
@@ -205,11 +207,11 @@
 .upload-icon-large {
   font-size: 3rem;
   margin-bottom: 10px;
-  filter: drop-shadow(0 2px 5px rgba(0,0,0,0.3));
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.3));
 }
 
 .upload-text {
-  color: rgba(255,255,255,0.9);
+  color: rgba(255, 255, 255, 0.9);
   font-weight: 600;
   font-size: 1rem;
   text-align: center;
@@ -217,7 +219,7 @@
 
 .upload-subtext {
   font-size: 0.8rem;
-  color: rgba(255,255,255,0.5);
+  color: rgba(255, 255, 255, 0.5);
   margin-top: 5px;
 }
 
@@ -226,4 +228,32 @@
   font-weight: 700;
   margin-top: 5px;
   word-break: break-all;
+}
+
+/* --- Mode Switch --- */
+.mode-switch {
+  display: flex;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 5px;
+  border-radius: 50px;
+  width: 100%;
+}
+
+.mode-btn {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  border-radius: 40px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.mode-btn.active {
+  background: #8352FD;
+  color: white;
+  box-shadow: 0 4px 10px rgba(131, 82, 253, 0.3);
 }

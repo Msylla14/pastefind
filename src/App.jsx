@@ -53,11 +53,7 @@ const lang = navigator.language.startsWith('fr') ? 'fr' : 'en'
 const t = TRANSLATIONS[lang]
 
 function App() {
-  const [url, setUrl] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [result, setResult] = useState(null)
-  const [error, setError] = useState('')
-  const [file, setFile] = useState(null)
+  const [mode, setMode] = useState('link') // 'link' or 'upload'
 
   const handleAnalyze = async () => {
     setLoading(true)
@@ -68,7 +64,12 @@ function App() {
       let response;
 
       // LOGIC: File Upload vs URL
-      if (file) {
+      if (mode === 'upload') {
+        if (!file) {
+          setError(t.upload_title) // Reuse text or add specific error
+          setLoading(false)
+          return
+        }
         const formData = new FormData()
         formData.append('file', file)
 
@@ -135,7 +136,6 @@ function App() {
   const handleFileChange = (e) => {
     if (e.target.files[0]) {
       setFile(e.target.files[0])
-      setUrl('') // clear URL if file selected
     }
   }
 
@@ -154,50 +154,89 @@ function App() {
 
       <div className="overlay-container">
 
-        {/* 1. URL Input */}
-        <input
-          type="text"
-          placeholder={t.placeholder}
-          className="glass-input"
-          value={url}
-          onChange={(e) => {
-            setUrl(e.target.value)
-            setFile(null)
-          }}
-          disabled={!!file}
-        />
-
-        {/* 2. HUGE UPLOAD ZONE */}
-        <div className="upload-wrapper">
-          <div className={`upload-zone ${file ? 'has-file' : ''}`}>
-            <input
-              type="file"
-              accept=".mp3,.wav,.mp4,.m4a"
-              onChange={handleFileChange}
-              className="upload-input-hidden"
-            />
-            <div className="upload-icon-large">
-              {file ? '📂' : '☁️'}
-            </div>
-            {file ? (
-              <div className="file-name-display">{file.name}</div>
-            ) : (
-              <>
-                <div className="upload-text">{t.upload_title}</div>
-                <div className="upload-subtext">{t.upload_subtitle}</div>
-              </>
-            )}
-          </div>
+        {/* MODE TOGGLE */}
+        <div className="mode-switch">
+          <button
+            className={`mode-btn ${mode === 'link' ? 'active' : ''}`}
+            onClick={() => setMode('link')}
+          >
+            🔗 Lien Vidéo
+          </button>
+          <button
+            className={`mode-btn ${mode === 'upload' ? 'active' : ''}`}
+            onClick={() => {
+              setMode('upload')
+              setResult(null)
+              setError('')
+            }}
+          >
+            📂 Fichier Local
+          </button>
         </div>
 
-        <button
-          className="analyze-btn"
-          onClick={handleAnalyze}
-          disabled={loading || (!url && !file)}
-          style={{ marginTop: '20px', width: '100%', padding: '18px' }}
-        >
-          {loading ? t.analyzing : t.analyze_btn}
-        </button>
+        {/* 1. URL Input Mode */}
+        {mode === 'link' && (
+          <input
+            type="text"
+            placeholder={t.placeholder}
+            className="glass-input"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+          />
+        )}
+
+        {/* 2. Upload Mode */}
+        {mode === 'upload' && (
+          <div className="upload-wrapper">
+            <div className={`upload-zone ${file ? 'has-file' : ''}`}>
+              <input
+                type="file"
+                accept=".mp3,.wav,.mp4,.m4a"
+                onChange={handleFileChange}
+                className="upload-input-hidden"
+              />
+              <div className="upload-icon-large">
+                {file ? '✅' : '☁️'}
+              </div>
+              {file ? (
+                <div className="file-name-display">{file.name}</div>
+              ) : (
+                <>
+                  <div className="upload-text">{t.upload_title}</div>
+                  <div className="upload-subtext">{t.upload_subtitle}</div>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
+        <div className="button-group" style={{ display: 'flex', gap: '10px', marginTop: '20px', width: '100%' }}>
+          <button
+            className="analyze-btn"
+            onClick={handleAnalyze}
+            disabled={loading || (mode === 'link' && !url) || (mode === 'upload' && !file)}
+            style={{ flex: 1, padding: '18px' }}
+          >
+            {loading ? t.analyzing : t.analyze_btn}
+          </button>
+
+          <button
+            className="mic-btn"
+            onClick={() => alert("Microphone soon!")}
+            title="Listen (Soon)"
+            style={{
+              padding: '18px',
+              borderRadius: '50px',
+              border: 'none',
+              background: 'rgba(255,255,255,0.1)',
+              color: '#fff',
+              cursor: 'pointer',
+              fontSize: '1.5rem'
+            }}
+          >
+            🎙️
+          </button>
+        </div>
 
         {error && (
           <div className="error-box" style={{
