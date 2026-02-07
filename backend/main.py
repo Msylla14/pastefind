@@ -314,12 +314,12 @@ async def analyze_file_route(file: UploadFile = File(...)):
     Endpoint for local file analysis (mp3, mp4, wav).
     Required for YouTube videos (client-side download -> server upload).
     """
-    allowed_extensions = {"mp3", "wav", "mp4", "m4a"}
+    allowed_extensions = {"mp3", "wav", "mp4", "m4a", "webm"}
     filename = file.filename
     ext = filename.split(".")[-1].lower() if "." in filename else ""
     
     if ext not in allowed_extensions:
-        return JSONResponse(content={"error": f"Format non supporté ({ext}). Utilisez mp3, wav ou mp4."}, status_code=400)
+        return JSONResponse(content={"error": f"Format non supporté ({ext}). Utilisez mp3, wav, mp4, m4a ou webm."}, status_code=400)
     
     # Generate temp file
     unique_id = str(uuid.uuid4())

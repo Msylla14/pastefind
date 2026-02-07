@@ -397,6 +397,7 @@
       <!-- LOADER -->
       <div id="loader" class="loader">
         <div class="spinner"></div>
+        <p id="statusText" class="status-text"></p>
         <p class="status-text" id="statusText">Analyse en cours...</p>
       </div>
     </div>
@@ -523,16 +524,28 @@
       if (!url) return showError("Veuillez entrer un lien valide.");
 
       startLoading("Téléchargement et analyse audio...");
+      
+      // Create timeout promise
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('timeout')), 60000)
+      );
+      
       try {
-        const response = await fetch(`${API_BASE}/api/analyze`, {
+        const fetchPromise = fetch(`${API_BASE}/api/analyze`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ url: url })
         });
+        
+        const response = await Promise.race([fetchPromise, timeoutPromise]);
         handleResponse(response);
       } catch (e) {
-        showError("Erreur de connexion au serveur.");
         stopLoading();
+        if (e.message === 'timeout') {
+          showError("⏱️ Délai d'attente dépassé. Le serveur met trop de temps à répondre.");
+        } else {
+          showError("❌ Erreur de connexion au serveur. Vérifiez votre connexion internet.");
+        }
       }
     }
 
@@ -543,15 +556,26 @@
       const formData = new FormData();
       formData.append('file', selectedFile);
 
+      // Create timeout promise
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('timeout')), 60000)
+      );
+
       try {
-        const response = await fetch(`${API_BASE}/api/analyze-file`, {
+        const fetchPromise = fetch(`${API_BASE}/api/analyze-file`, {
           method: 'POST',
           body: formData
         });
+        
+        const response = await Promise.race([fetchPromise, timeoutPromise]);
         handleResponse(response);
       } catch (e) {
-        showError("Erreur de connexion au serveur.");
         stopLoading();
+        if (e.message === 'timeout') {
+          showError("⏱️ Délai d'attente dépassé. Le fichier est peut-être trop volumineux.");
+        } else {
+          showError("❌ Erreur de connexion au serveur. Vérifiez votre connexion internet.");
+        }
       }
     }
 
