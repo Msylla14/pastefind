@@ -1,16 +1,623 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="fr">
 
 <head>
-  <meta charset="UTF-8" />
-  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PasteFind - Studio</title>
+  <style>
+    /* STYLE GLOBAL - DARK MODE STUDIO */
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #0a0a0a;
+      background-image: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.9)), url('/bg-wave.png');
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      color: white;
+      font-family: 'Segoe UI', Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .container {
+      text-align: center;
+      z-index: 10;
+      width: 90%;
+      max-width: 600px;
+      padding: 20px;
+    }
+
+    h1 {
+      font-family: 'Arial Black', sans-serif;
+      letter-spacing: 3px;
+      margin-bottom: 5px;
+      font-size: 3em;
+      text-shadow: 0 0 20px rgba(255, 0, 127, 0.5);
+    }
+
+    .gradient-text {
+      background: linear-gradient(to right, #ff007f, #8A2BE2, #00d4ff);
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* GLASSMORPHISM CARD */
+    .glass-panel {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      padding: 30px;
+      margin-top: 30px;
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+    }
+
+    /* TABS */
+    .tab-container {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+      gap: 20px;
+    }
+
+    .tab {
+      cursor: pointer;
+      padding: 10px 20px;
+      border-bottom: 2px solid transparent;
+      color: rgba(255, 255, 255, 0.5);
+      transition: 0.3s;
+      font-weight: 500;
+    }
+
+    .tab.active {
+      color: white;
+      border-bottom-color: #ff007f;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+      animation: fadeIn 0.3s;
+    }
+
+    /* INPUTS */
+    .input-group {
+      position: relative;
+      margin-bottom: 20px;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 15px;
+      box-sizing: border-box;
+      border-radius: 30px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(0, 0, 0, 0.3);
+      color: white;
+      font-size: 16px;
+      outline: none;
+      transition: 0.3s;
+    }
+
+    input[type="text"]:focus {
+      border-color: #ff007f;
+      box-shadow: 0 0 15px rgba(255, 0, 127, 0.2);
+    }
+
+    input[type="text"]::placeholder {
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    /* UPLOAD ZONE */
+    .upload-zone {
+      border: 2px dashed rgba(255, 255, 255, 0.2);
+      border-radius: 15px;
+      padding: 40px 20px;
+      text-align: center;
+      margin: 20px 0;
+      transition: 0.3s;
+      cursor: pointer;
+      background: rgba(0, 0, 0, 0.2);
+    }
+
+    .upload-zone:hover,
+    .upload-zone.dragover {
+      border-color: #00d4ff;
+      background: rgba(0, 212, 255, 0.1);
+    }
+
+    .upload-zone p {
+      margin: 10px 0 0 0;
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 14px;
+    }
+
+    .upload-zone .icon {
+      font-size: 3em;
+      margin-bottom: 10px;
+    }
+
+    #fileInput {
+      display: none;
+    }
+
+    /* BUTTONS */
+    .button-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-main {
+      flex: 1;
+      padding: 12px 30px;
+      border-radius: 25px;
+      border: none;
+      background: linear-gradient(45deg, #ff007f, #8A2BE2);
+      color: white;
+      font-weight: bold;
+      font-size: 16px;
+      cursor: pointer;
+      transition: 0.3s;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      box-shadow: 0 5px 15px rgba(138, 43, 226, 0.4);
+    }
+
+    .btn-main:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(255, 0, 127, 0.6);
+    }
+
+    .btn-main:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-mic {
+      padding: 12px 20px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      font-size: 1.5em;
+      cursor: pointer;
+      transition: 0.3s;
+      width: 50px;
+      height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-mic:hover {
+      background: rgba(255, 0, 127, 0.3);
+      transform: scale(1.1);
+    }
+
+    .btn-mic.recording {
+      background: #ff007f;
+      animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+
+    /* RESULT CARD */
+    #result {
+      margin-top: 30px;
+      display: none;
+      animation: fadeIn 0.5s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .cover-art {
+      width: 180px;
+      height: 180px;
+      border-radius: 15px;
+      margin-bottom: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    /* PLATFORM BUTTONS */
+    .stream-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 15px;
+      margin-top: 25px;
+    }
+
+    .btn-neon {
+      display: inline-flex;
+      align-items: center;
+      padding: 10px 25px;
+      border-radius: 20px;
+      color: white;
+      text-decoration: none;
+      font-weight: bold;
+      font-size: 14px;
+      transition: 0.3s;
+      border: 1px solid transparent;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .btn-spotify {
+      border-color: #1DB954;
+      color: #1DB954;
+    }
+
+    .btn-spotify:hover {
+      background: #1DB954;
+      color: white;
+      box-shadow: 0 0 20px rgba(29, 185, 84, 0.4);
+    }
+
+    .btn-youtube {
+      border-color: #FF0000;
+      color: #FF0000;
+    }
+
+    .btn-youtube:hover {
+      background: #FF0000;
+      color: white;
+      box-shadow: 0 0 20px rgba(255, 0, 0, 0.4);
+    }
+
+    .btn-apple {
+      border-color: #FA243C;
+      color: #FA243C;
+    }
+
+    .btn-apple:hover {
+      background: #FA243C;
+      color: white;
+      box-shadow: 0 0 20px rgba(250, 36, 60, 0.4);
+    }
+
+    /* LOADING & PROGRESS */
+    .loader {
+      display: none;
+      margin-top: 20px;
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid rgba(255, 255, 255, 0.1);
+      border-left-color: #ff007f;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+
+    @keyframes spin {
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    .status-text {
+      margin-top: 10px;
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    /* FOOTER */
+    .footer-note {
+      margin-top: 40px;
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.3);
+    }
+
+    /* ERROR */
+    .error-msg {
+      color: #ff4d4d;
+      background: rgba(255, 77, 77, 0.1);
+      padding: 10px;
+      border-radius: 10px;
+      margin-top: 15px;
+      font-size: 14px;
+      display: none;
+      border: 1px solid rgba(255, 77, 77, 0.3);
+    }
+  </style>
 </head>
 
 <body>
-  <div id="root"></div>
-  <script type="module" src="/src/main.jsx"></script>
+
+  <div class="container">
+    <h1 class="gradient-text">PasteFind</h1>
+    <p style="text-transform: uppercase; font-size: 12px; letter-spacing: 2px; opacity: 0.8; margin-bottom: 30px;">
+      Scanner Musical & Identificateur IA
+    </p>
+
+    <div class="glass-panel">
+      <!-- TABS -->
+      <div class="tab-container">
+        <div class="tab active" onclick="switchTab('url')">🔗 Lien Vidéo</div>
+        <div class="tab" onclick="switchTab('file')">📂 Fichier Local</div>
+      </div>
+
+      <!-- URL INPUT TAB -->
+      <div id="tab-url" class="tab-content active">
+        <div class="input-group">
+          <input type="text" id="videoUrl" placeholder="Colle un lien Facebook, TikTok, Instagram...">
+        </div>
+        <div class="button-row">
+          <button onclick="analyzeUrl()" id="btnUrl" class="btn-main">Analyser le lien</button>
+          <button onclick="startMicRecording()" id="btnMic" class="btn-mic" title="Enregistrer audio (10s)">🎙️</button>
+        </div>
+      </div>
+
+      <!-- FILE UPLOAD TAB -->
+      <div id="tab-file" class="tab-content">
+        <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+          <div class="icon">☁️</div>
+          <p><strong>Glissez votre fichier ici</strong></p>
+          <p>ou cliquez pour parcourir (MP3, MP4, WAV)</p>
+          <p id="fileName" style="color: #00d4ff; margin-top: 10px;"></p>
+        </div>
+        <input type="file" id="fileInput" accept=".mp3,.mp4,.wav,.m4a" onchange="handleFileSelect(event)">
+        <div class="button-row">
+          <button onclick="analyzeFile()" id="btnFile" class="btn-main" disabled>Analyser le fichier</button>
+          <button onclick="startMicRecording()" id="btnMic2" class="btn-mic" title="Enregistrer audio (10s)">🎙️</button>
+        </div>
+      </div>
+
+      <!-- ERROR MESSAGE -->
+      <div id="errorMsg" class="error-msg"></div>
+
+      <!-- LOADER -->
+      <div id="loader" class="loader">
+        <div class="spinner"></div>
+        <p class="status-text" id="statusText">Analyse en cours...</p>
+      </div>
+    </div>
+
+    <div id="result">
+      <!-- Content injected by JS -->
+    </div>
+
+    <p class="footer-note">v2.0 - Powered by PasteFind Engine</p>
+
+  </div>
+
+  <script>
+    // 🟢 CONFIG
+    const API_BASE = "https://pastefind.onrender.com";
+
+    let selectedFile = null;
+    let mediaRecorder = null;
+    let audioChunks = [];
+
+    // --- TAB SWITCHING ---
+    function switchTab(tabName) {
+      // Update tabs
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      
+      if (tabName === 'url') {
+        document.querySelectorAll('.tab')[0].classList.add('active');
+        document.getElementById('tab-url').classList.add('active');
+      } else {
+        document.querySelectorAll('.tab')[1].classList.add('active');
+        document.getElementById('tab-file').classList.add('active');
+      }
+      
+      // Clear errors
+      document.getElementById('errorMsg').style.display = 'none';
+      document.getElementById('result').style.display = 'none';
+    }
+
+    // --- FILE HANDLING ---
+    function handleFileSelect(event) {
+      selectedFile = event.target.files[0];
+      if (selectedFile) {
+        document.getElementById('fileName').innerText = `✅ ${selectedFile.name}`;
+        document.getElementById('btnFile').disabled = false;
+      }
+    }
+
+    // Drag & Drop
+    const uploadZone = document.getElementById('uploadZone');
+    uploadZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      uploadZone.classList.add('dragover');
+    });
+    uploadZone.addEventListener('dragleave', () => {
+      uploadZone.classList.remove('dragover');
+    });
+    uploadZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadZone.classList.remove('dragover');
+      const files = e.dataTransfer.files;
+      if (files.length > 0) {
+        selectedFile = files[0];
+        document.getElementById('fileName').innerText = `✅ ${selectedFile.name}`;
+        document.getElementById('btnFile').disabled = false;
+      }
+    });
+
+    // --- MICROPHONE RECORDING ---
+    async function startMicRecording() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        audioChunks = [];
+
+        mediaRecorder.ondataavailable = (event) => {
+          audioChunks.push(event.data);
+        };
+
+        mediaRecorder.onstop = async () => {
+          const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+          const audioFile = new File([audioBlob], 'recording.webm', { type: 'audio/webm' });
+          
+          // Stop all tracks
+          stream.getTracks().forEach(track => track.stop());
+          
+          // Switch to file tab and analyze
+          switchTab('file');
+          selectedFile = audioFile;
+          document.getElementById('fileName').innerText = `✅ ${audioFile.name} (Enregistrement)`;
+          document.getElementById('btnFile').disabled = false;
+          
+          // Auto-analyze
+          analyzeFile();
+        };
+
+        // Start recording
+        mediaRecorder.start();
+        
+        // Visual feedback
+        document.getElementById('btnMic').classList.add('recording');
+        document.getElementById('btnMic2').classList.add('recording');
+        
+        // Stop after 10 seconds
+        setTimeout(() => {
+          if (mediaRecorder && mediaRecorder.state === 'recording') {
+            mediaRecorder.stop();
+            document.getElementById('btnMic').classList.remove('recording');
+            document.getElementById('btnMic2').classList.remove('recording');
+          }
+        }, 10000);
+        
+        showError("🎙️ Enregistrement en cours... (10 secondes max)");
+        
+      } catch (err) {
+        console.error('Microphone error:', err);
+        showError("❌ Impossible d'accéder au microphone. Vérifiez les permissions.");
+      }
+    }
+
+    // --- API CALLS ---
+    async function analyzeUrl() {
+      const url = document.getElementById('videoUrl').value.trim();
+      if (!url) return showError("Veuillez entrer un lien valide.");
+
+      startLoading("Téléchargement et analyse audio...");
+      try {
+        const response = await fetch(`${API_BASE}/api/analyze`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: url })
+        });
+        handleResponse(response);
+      } catch (e) {
+        showError("Erreur de connexion au serveur.");
+        stopLoading();
+      }
+    }
+
+    async function analyzeFile() {
+      if (!selectedFile) return showError("Veuillez sélectionner un fichier.");
+
+      startLoading("Analyse du fichier audio...");
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+
+      try {
+        const response = await fetch(`${API_BASE}/api/analyze-file`, {
+          method: 'POST',
+          body: formData
+        });
+        handleResponse(response);
+      } catch (e) {
+        showError("Erreur de connexion au serveur.");
+        stopLoading();
+      }
+    }
+
+    async function handleResponse(response) {
+      try {
+        const data = await response.json();
+        stopLoading();
+
+        if (!response.ok || data.error) {
+          showError(data.error || "Une erreur inconnue est survenue.");
+          return;
+        }
+
+        displayResult(data);
+      } catch (e) {
+        stopLoading();
+        showError("Erreur de lecture de la réponse serveur.");
+      }
+    }
+
+    // --- UI HELPERS ---
+    function displayResult(data) {
+      const resultDiv = document.getElementById('result');
+      const appleBtn = data.apple_music ? `<a href="${data.apple_music}" target="_blank" class="btn-neon btn-apple">APPLE MUSIC</a>` : '';
+      const spotifyBtn = data.spotify_url ? `<a href="${data.spotify_url}" target="_blank" class="btn-neon btn-spotify">SPOTIFY</a>` : '';
+      const youtubeBtn = data.youtube_url ? `<a href="${data.youtube_url}" target="_blank" class="btn-neon btn-youtube">YOUTUBE</a>` : '';
+
+      resultDiv.innerHTML = `
+        <div class="glass-panel" style="border-color: rgba(0, 212, 255, 0.3);">
+          <img src="${data.image}" class="cover-art" alt="Cover" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 200 200%22%3E%3Crect fill=%22%23333%22 width=%22200%22 height=%22200%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 fill=%22%23fff%22 text-anchor=%22middle%22 dy=%22.3em%22 font-size=%2220%22%3ENo Cover%3C/text%3E%3C/svg%3E'">
+          <h2 style="margin: 5px 0;">${data.title}</h2>
+          <p style="opacity: 0.7; font-size: 1.1em; color: #00d4ff;">${data.subtitle}</p>
+          
+          <div class="stream-buttons">
+            ${appleBtn}
+            ${spotifyBtn}
+            ${youtubeBtn}
+          </div>
+        </div>
+      `;
+      resultDiv.style.display = 'block';
+    }
+
+    function startLoading(msg) {
+      document.getElementById('result').style.display = 'none';
+      document.getElementById('errorMsg').style.display = 'none';
+      document.getElementById('loader').style.display = 'block';
+      document.getElementById('statusText').innerText = msg;
+      document.getElementById('btnUrl').disabled = true;
+      document.getElementById('btnFile').disabled = true;
+    }
+
+    function stopLoading() {
+      document.getElementById('loader').style.display = 'none';
+      document.getElementById('btnUrl').disabled = false;
+      if (selectedFile) {
+        document.getElementById('btnFile').disabled = false;
+      }
+    }
+
+    function showError(msg) {
+      const errDiv = document.getElementById('errorMsg');
+      errDiv.innerText = msg;
+      errDiv.style.display = 'block';
+    }
+  </script>
 </body>
 
 </html>
