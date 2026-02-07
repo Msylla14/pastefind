@@ -54,6 +54,11 @@ const t = TRANSLATIONS[lang]
 
 function App() {
   const [mode, setMode] = useState('link') // 'link' or 'upload'
+  const [url, setUrl] = useState('')
+  const [file, setFile] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [result, setResult] = useState(null)
 
   const handleAnalyze = async () => {
     setLoading(true)
@@ -136,6 +141,47 @@ function App() {
   const handleFileChange = (e) => {
     if (e.target.files[0]) {
       setFile(e.target.files[0])
+    }
+  }
+
+  const handleMicRecord = async () => {
+    try {
+      // Request microphone access
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const mediaRecorder = new MediaRecorder(stream)
+      const audioChunks = []
+
+      mediaRecorder.ondataavailable = (event) => {
+        audioChunks.push(event.data)
+      }
+
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' })
+        const audioFile = new File([audioBlob], 'recording.webm', { type: 'audio/webm' })
+        
+        // Switch to upload mode and set the recorded file
+        setMode('upload')
+        setFile(audioFile)
+        
+        // Stop all tracks
+        stream.getTracks().forEach(track => track.stop())
+      }
+
+      // Start recording
+      mediaRecorder.start()
+      
+      // Stop after 10 seconds
+      setTimeout(() => {
+        if (mediaRecorder.state === 'recording') {
+          mediaRecorder.stop()
+        }
+      }, 10000)
+      
+      alert('🎙️ Enregistrement en cours... (10 secondes max)')
+      
+    } catch (err) {
+      console.error('Microphone error:', err)
+      alert('Erreur: Impossible d\'accéder au microphone. Vérifiez les permissions.')
     }
   }
 
@@ -222,8 +268,8 @@ function App() {
 
           <button
             className="mic-btn"
-            onClick={() => alert("Microphone soon!")}
-            title="Listen (Soon)"
+            onClick={handleMicRecord}
+            title="Enregistrer audio (10s)"
             style={{
               padding: '18px',
               borderRadius: '50px',

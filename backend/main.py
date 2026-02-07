@@ -111,9 +111,21 @@ def analyze_audio_with_acrcloud(file_path: str):
         artist_names = [a.get('name') for a in artists]
         subtitle = ", ".join(artist_names) if artist_names else "Unknown Artist"
         
-        # Album / Cover
+        # Album / Cover - Multiple fallback sources
         album = music.get('album', {})
         image = album.get('cover', '')
+        
+        # Fallback: Try to get cover from external metadata if album cover missing
+        if not image:
+            if isinstance(spotify_data, dict) and 'track' in spotify_data:
+                album_info = spotify_data['track'].get('album', {})
+                images = album_info.get('images', [])
+                if images and len(images) > 0:
+                    image = images[0].get('url', '')
+        
+        # Additional fallback: Check if music object has direct cover
+        if not image:
+            image = music.get('cover', '')
         
         # External Metadata
         external = music.get('external_metadata', {})
@@ -149,7 +161,7 @@ def analyze_audio_with_acrcloud(file_path: str):
         return {
             "title": title,
             "subtitle": subtitle,
-            "image": image,
+            "image": image if image else '',  # Ensure empty string if no cover
             "spotify_url": spotify_url,
             "youtube_url": youtube_url,
             "apple_music": apple_music_url 
@@ -182,19 +194,32 @@ def download_audio(url: str):
             '-t', '60'
         ],
         
-        # Anti-detection YouTube
+        # Anti-detection for all platforms
         'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'referer': 'https://www.youtube.com/',
+        'referer': url if 'facebook.com' in url or 'instagram.com' in url else 'https://www.youtube.com/',
         'nocheckcertificate': True,
         'age_limit': None,
         'geo_bypass': True,
         'socket_timeout': 60,
+        'retries': 3,
+        'fragment_retries': 3,
+        
+        # Facebook/Instagram specific
+        'extractor_args': {
+            'facebook': {
+                'skip_download_archive': True
+            },
+            'instagram': {
+                'skip_download_archive': True
+            }
+        },
         
         'http_headers': {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
             'Accept-Language': 'en-us,en;q=0.5',
             'Sec-Fetch-Mode': 'navigate',
+            'Cookie': ''  # Prevent cookie issues
         }
     }
 
