@@ -5,3 +5,4 @@ yt-dlp>=2025.01.12
 pyacrcloud
 python-multipart
 jinja2
+requests
