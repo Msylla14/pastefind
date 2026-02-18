@@ -12,6 +12,7 @@ import json
 import urllib.parse
 import requests
 import time
+from youtube_functions import extract_youtube_id, get_youtube_metadata, identify_music_from_youtube_metadata, download_youtube_audio_rapidapi
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -30,6 +31,14 @@ ACRCLOUD_CONFIG = {
 # AudD.io Configuration
 AUDD_API_TOKEN = os.getenv('AUDD_API_TOKEN', 'test')  # 'test' token for testing, replace with real token
 AUDD_API_URL = 'https://api.audd.io/'
+
+# YouTube API Configuration
+YOUTUBE_API_KEY = os.getenv('YOUTUBE_API_KEY', '')
+YOUTUBE_API_URL = 'https://www.googleapis.com/youtube/v3'
+
+# RapidAPI Configuration (for YouTube download fallback)
+RAPIDAPI_KEY = os.getenv('RAPIDAPI_KEY', '')
+RAPIDAPI_YOUTUBE_URL = 'https://youtube-mp36.p.rapidapi.com'
 
 # CORS
 app.add_middleware(
@@ -388,14 +397,73 @@ async def analyze_video(data: VideoURL):
         url = clean_url(data.url)
         logger.info(f"Received URL: {url}")
         
-        # Block YouTube
+        # YouTube handling with API
         if 'youtube.com' in url or 'youtu.be' in url:
-            return JSONResponse(
-                status_code=200,
-                content={
-                    "error": "🚫 YouTube bloque l'extraction audio pour des raisons de droits d'auteur.\n\n💡 Solution : Téléchargez la vidéo YouTube avec une application (SnapTube, VidMate, etc.) puis utilisez le mode 'Fichier Local' pour analyser le fichier MP3/MP4."
-                }
-            )
+            logger.info("YouTube URL detected, using YouTube API")
+            
+            # Extract video ID
+            video_id = extract_youtube_id(url)
+            if not video_id:
+                return JSONResponse(
+                    status_code=200,
+                    content={"error": "❌ Lien YouTube invalide. Vérifiez le lien et réessayez."}
+                )
+            
+            # Method 1: Try to identify from YouTube metadata (fast, free)
+            if YOUTUBE_API_KEY:
+                logger.info("Trying YouTube metadata identification...")
+                metadata = get_youtube_metadata(video_id, YOUTUBE_API_KEY)
+                if metadata:
+                    music_info = identify_music_from_youtube_metadata(metadata)
+                    if music_info:
+                        logger.info(f"Music identified from YouTube metadata: {music_info}")
+                        
+                        # Generate links
+                        title = music_info['title']
+                        artist = music_info['artist']
+                        query = urllib.parse.quote(f"{title} {artist}")
+                        
+                        return JSONResponse(
+                            status_code=200,
+                            content={
+                                "title": title,
+                                "subtitle": artist,
+                                "image": metadata.get('thumbnail', ''),
+                                "spotify_url": f"https://open.spotify.com/search/{query}",
+                                "youtube_url": url,
+                                "apple_music": f"https://music.apple.com/search?term={query}",
+                                "service": "youtube_metadata"
+                            }
+                        )
+            
+            # Method 2: Try RapidAPI download (if configured)
+            if RAPIDAPI_KEY:
+                logger.info("Trying RapidAPI YouTube download...")
+                audio_path = download_youtube_audio_rapidapi(video_id, RAPIDAPI_KEY)
+                if audio_path:
+                    # Continue with normal analysis flow
+                    logger.info(f"YouTube audio downloaded via RapidAPI: {audio_path}")
+                    # Fall through to normal analysis below
+                else:
+                    logger.warning("RapidAPI download failed")
+            
+            # Method 3: Fallback - suggest manual download
+            if not YOUTUBE_API_KEY and not RAPIDAPI_KEY:
+                return JSONResponse(
+                    status_code=200,
+                    content={
+                        "error": "🚫 YouTube bloque l'extraction audio pour des raisons de droits d'auteur.\n\n💡 Solution : Téléchargez la vidéo YouTube avec une application (SnapTube, VidMate, etc.) puis utilisez le mode 'Fichier Local' pour analyser le fichier MP3/MP4."
+                    }
+                )
+            
+            # If we got here without audio_path, metadata method failed
+            if 'audio_path' not in locals():
+                return JSONResponse(
+                    status_code=200,
+                    content={
+                        "error": "⚠️ Impossible d'identifier la musique automatiquement.\n\n💡 Solution : Téléchargez la vidéo et utilisez le mode 'Fichier Local'."
+                    }
+                )
         
         # Download audio
         audio_path = download_audio(url)
