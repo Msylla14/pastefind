@@ -305,7 +305,7 @@ def download_audio(url: str):
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',
             'preferredcodec': 'mp3',
-            'preferredquality': '192',
+            'preferredquality': '256',  # Increased from 192 to 256 for better quality
         }],
         'outtmpl': f'{temp_dir}/%(id)s.%(ext)s',
         'quiet': False,
@@ -314,6 +314,9 @@ def download_audio(url: str):
         'postprocessor_args': [
             '-t', '60'
         ],
+        'retries': 5,  # Increased retries for unstable connections
+        'fragment_retries': 5,
+        'skip_unavailable_fragments': False,
         
         'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'referer': url if 'facebook.com' in url or 'instagram.com' in url else 'https://www.youtube.com/',
@@ -333,6 +336,10 @@ def download_audio(url: str):
     if 'facebook.com' in url or 'fb.watch' in url or 'instagram.com' in url:
         ydl_opts['http_headers']['Referer'] = url
         ydl_opts['http_headers']['Origin'] = 'https://www.facebook.com' if 'facebook.com' in url else 'https://www.instagram.com'
+        ydl_opts['http_headers']['Accept-Language'] = 'en-US,en;q=0.9'
+        ydl_opts['http_headers']['Sec-Fetch-Mode'] = 'navigate'
+        # Force best quality for Facebook/Instagram
+        ydl_opts['format'] = 'bestaudio[ext=m4a]/bestaudio/best'
     
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -385,7 +392,9 @@ async def analyze_video(data: VideoURL):
         if 'youtube.com' in url or 'youtu.be' in url:
             return JSONResponse(
                 status_code=200,
-                content={"error": "YouTube bloque l'extraction directe. Téléchargez la vidéo et utilisez l'Upload Local."}
+                content={
+                    "error": "🚫 YouTube bloque l'extraction audio pour des raisons de droits d'auteur.\n\n💡 Solution : Téléchargez la vidéo YouTube avec une application (SnapTube, VidMate, etc.) puis utilisez le mode 'Fichier Local' pour analyser le fichier MP3/MP4."
+                }
             )
         
         # Download audio
