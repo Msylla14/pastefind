@@ -1,6 +1,6 @@
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, HTMLResponse
 from pydantic import BaseModel
 from acrcloud.recognizer import ACRCloudRecognizer
 import yt_dlp
@@ -537,6 +537,162 @@ async def upload_file(file: UploadFile = File(...)):
     except Exception as e:
         logger.error(f"Upload Error: {e}")
         return JSONResponse(status_code=500, content={"error": str(e)})
+
+@app.get("/privacy", response_class=HTMLResponse)
+async def privacy_policy():
+    """
+    Page de politique de confidentialité pour Google Play Store
+    """
+    html_content = """<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Politique de Confidentialité - PasteFind</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+        }
+        h1 {
+            color: #E91E63;
+            border-bottom: 3px solid #9C27B0;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #9C27B0;
+            margin-top: 30px;
+        }
+        .last-updated {
+            color: #666;
+            font-style: italic;
+            margin-bottom: 30px;
+        }
+        .contact {
+            background: #f5f5f5;
+            padding: 15px;
+            border-left: 4px solid #E91E63;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Politique de Confidentialité - PasteFind</h1>
+    <p class="last-updated">Dernière mise à jour : 19 février 2026</p>
+
+    <h2>1. Introduction</h2>
+    <p>
+        Bienvenue sur PasteFind. Nous respectons votre vie privée et nous nous engageons à protéger vos données personnelles. 
+        Cette politique de confidentialité explique comment nous collectons, utilisons et protégeons vos informations lorsque vous utilisez notre application mobile et notre site web.
+    </p>
+
+    <h2>2. Données Collectées</h2>
+    <p>PasteFind collecte les types de données suivants :</p>
+    <ul>
+        <li><strong>Enregistrements audio</strong> : Lorsque vous utilisez la fonctionnalité microphone, nous enregistrons jusqu'à 10 secondes d'audio pour identifier la musique.</li>
+        <li><strong>URLs vidéo</strong> : Les liens TikTok, YouTube, Facebook ou Instagram que vous collez pour analyse.</li>
+        <li><strong>Historique de recherche</strong> : Les résultats de vos recherches musicales sont stockés localement sur votre appareil (ou dans le cloud si vous êtes connecté).</li>
+        <li><strong>Informations de compte</strong> : Si vous créez un compte, nous collectons votre email et votre nom via Google Sign-In ou Apple Sign-In.</li>
+        <li><strong>Données d'utilisation</strong> : Statistiques anonymes sur l'utilisation de l'application (nombre de recherches, fonctionnalités utilisées).</li>
+    </ul>
+
+    <h2>3. Utilisation des Données</h2>
+    <p>Nous utilisons vos données pour :</p>
+    <ul>
+        <li>Identifier les morceaux de musique à partir d'enregistrements audio ou de vidéos</li>
+        <li>Améliorer la précision de notre service de reconnaissance musicale</li>
+        <li>Synchroniser votre historique de recherche entre vos appareils (si vous êtes connecté)</li>
+        <li>Gérer votre abonnement Premium et vos paiements</li>
+        <li>Afficher des publicités personnalisées (utilisateurs gratuits uniquement)</li>
+        <li>Analyser l'utilisation de l'application pour améliorer nos services</li>
+    </ul>
+
+    <h2>4. Partage des Données</h2>
+    <p>Nous ne vendons jamais vos données personnelles. Nous partageons vos données uniquement avec :</p>
+    <ul>
+        <li><strong>Services d'identification musicale</strong> : ACRCloud, AudD.io, YouTube Data API pour analyser les enregistrements audio et vidéos</li>
+        <li><strong>Google AdMob</strong> : Pour afficher des publicités aux utilisateurs gratuits (conformément à la politique de Google)</li>
+        <li><strong>Stripe</strong> : Pour traiter les paiements des abonnements Premium (conformément à la politique de Stripe)</li>
+        <li><strong>Hébergement</strong> : Render.com pour héberger notre backend et base de données</li>
+    </ul>
+
+    <h2>5. Conservation des Données</h2>
+    <ul>
+        <li><strong>Enregistrements audio</strong> : Supprimés immédiatement après identification (non stockés)</li>
+        <li><strong>Historique de recherche</strong> : Conservé indéfiniment (sauf suppression manuelle par l'utilisateur)</li>
+        <li><strong>Données de compte</strong> : Conservées tant que votre compte est actif</li>
+        <li><strong>Logs serveur</strong> : Conservés 30 jours pour débogage et sécurité</li>
+    </ul>
+
+    <h2>6. Vos Droits (RGPD)</h2>
+    <p>Conformément au Règlement Général sur la Protection des Données (RGPD), vous avez le droit de :</p>
+    <ul>
+        <li><strong>Accès</strong> : Demander une copie de vos données personnelles</li>
+        <li><strong>Rectification</strong> : Corriger des données inexactes</li>
+        <li><strong>Suppression</strong> : Supprimer votre compte et toutes vos données</li>
+        <li><strong>Portabilité</strong> : Exporter vos données dans un format lisible</li>
+        <li><strong>Opposition</strong> : Refuser le traitement de vos données à des fins marketing</li>
+    </ul>
+
+    <h2>7. Sécurité</h2>
+    <p>
+        Nous mettons en œuvre des mesures de sécurité techniques et organisationnelles pour protéger vos données :
+    </p>
+    <ul>
+        <li>Chiffrement HTTPS pour toutes les communications</li>
+        <li>Authentification OAuth sécurisée (Google/Apple)</li>
+        <li>Base de données PostgreSQL avec accès restreint</li>
+        <li>Audits de sécurité réguliers</li>
+    </ul>
+
+    <h2>8. Cookies et Technologies Similaires</h2>
+    <p>
+        Nous utilisons des cookies et technologies similaires pour :
+    </p>
+    <ul>
+        <li>Maintenir votre session de connexion</li>
+        <li>Mémoriser vos préférences (thème sombre/clair)</li>
+        <li>Analyser l'utilisation du site web (Google Analytics)</li>
+        <li>Afficher des publicités personnalisées (Google AdMob)</li>
+    </ul>
+
+    <h2>9. Services Tiers</h2>
+    <p>PasteFind utilise les services tiers suivants, chacun ayant sa propre politique de confidentialité :</p>
+    <ul>
+        <li><a href="https://www.acrcloud.com/privacy" target="_blank">ACRCloud Privacy Policy</a></li>
+        <li><a href="https://audd.io/privacy" target="_blank">AudD.io Privacy Policy</a></li>
+        <li><a href="https://policies.google.com/privacy" target="_blank">Google Privacy Policy</a> (YouTube Data API, AdMob, Sign-In)</li>
+        <li><a href="https://www.apple.com/legal/privacy/" target="_blank">Apple Privacy Policy</a> (Sign-In)</li>
+        <li><a href="https://stripe.com/privacy" target="_blank">Stripe Privacy Policy</a> (Paiements)</li>
+    </ul>
+
+    <h2>10. Modifications de cette Politique</h2>
+    <p>
+        Nous pouvons mettre à jour cette politique de confidentialité de temps en temps. 
+        Nous vous informerons de tout changement important via l'application ou par email. 
+        La date de "Dernière mise à jour" en haut de cette page indique quand la politique a été modifiée pour la dernière fois.
+    </p>
+
+    <h2>11. Contact</h2>
+    <div class="contact">
+        <p>Pour toute question concernant cette politique de confidentialité ou pour exercer vos droits, contactez-nous :</p>
+        <p>
+            <strong>Email</strong> : <a href="mailto:contact@pastefind.com">contact@pastefind.com</a><br>
+            <strong>Site web</strong> : <a href="https://pastefind.onrender.com">https://pastefind.onrender.com</a>
+        </p>
+    </div>
+
+    <hr style="margin-top: 50px; border: none; border-top: 1px solid #ddd;">
+    <p style="text-align: center; color: #999; font-size: 14px;">
+        © 2026 PasteFind. Tous droits réservés.
+    </p>
+</body>
+</html>"""
+    return HTMLResponse(content=html_content, status_code=200)
 
 if __name__ == "__main__":
     import uvicorn
