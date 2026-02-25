@@ -1,6 +1,7 @@
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, HTMLResponse
+from fastapi.responses import JSONResponse, HTMLResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from acrcloud.recognizer import ACRCloudRecognizer
 import yt_dlp
@@ -48,6 +49,31 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Static files (logo, favicon, bg-wave)
+static_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)))
+if os.path.exists(static_dir):
+    # Mount individual static files
+    @app.get("/logo.png")
+    async def get_logo():
+        logo_path = os.path.join(static_dir, 'logo.png')
+        if os.path.exists(logo_path):
+            return FileResponse(logo_path)
+        return JSONResponse({"error": "Logo not found"}, status_code=404)
+    
+    @app.get("/favicon.png")
+    async def get_favicon():
+        favicon_path = os.path.join(static_dir, 'favicon.png')
+        if os.path.exists(favicon_path):
+            return FileResponse(favicon_path)
+        return JSONResponse({"error": "Favicon not found"}, status_code=404)
+    
+    @app.get("/bg-wave.png")
+    async def get_bg_wave():
+        bg_path = os.path.join(static_dir, 'bg-wave.png')
+        if os.path.exists(bg_path):
+            return FileResponse(bg_path)
+        return JSONResponse({"error": "Background not found"}, status_code=404)
 
 class VideoURL(BaseModel):
     url: str
@@ -375,9 +401,17 @@ def download_audio(url: str):
 
 # --- API Routes ---
 
-@app.get("/")
+@app.get("/", response_class=HTMLResponse)
 async def root():
-    return {"status": "L'API PasteFind est en cours d'exécution", "version": "2.1-hybrid", "docs_url": "/docs"}
+    """
+    Serve the main HTML interface
+    """
+    html_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'index.html')
+    try:
+        with open(html_path, 'r', encoding='utf-8') as f:
+            return HTMLResponse(content=f.read(), status_code=200)
+    except FileNotFoundError:
+        return HTMLResponse(content="<h1>PasteFind</h1><p>Interface not found</p>", status_code=404)
 
 @app.get("/health")
 async def health():
