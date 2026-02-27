@@ -419,7 +419,10 @@
 
   <script>
     // 🟢 CONFIG
-    const API_BASE = "https://pastefind.onrender.com";
+    // L'API est sur le même domaine (pastefind.com = pastefind.onrender.com)
+    const API_BASE = window.location.origin.includes('localhost') 
+      ? 'http://localhost:10000' 
+      : 'https://pastefind.onrender.com';
 
     let selectedFile = null;
     let mediaRecorder = null;
@@ -529,12 +532,13 @@
     async function analyzeUrl() {
       const url = document.getElementById('videoUrl').value.trim();
       if (!url) return showError("Veuillez entrer un lien valide.");
+      if (!url.startsWith('http')) return showError("❌ Lien invalide. Copiez le lien complet depuis l'application (commençant par https://)");
 
-      startLoading("Téléchargement et analyse audio...");
+      startLoading("🔍 Extraction et analyse audio en cours... (peut prendre 30-60 secondes)");
       
-      // Create timeout promise
+      // Timeout 120 secondes pour les liens (téléchargement peut être lent)
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('timeout')), 60000)
+        setTimeout(() => reject(new Error('timeout')), 120000)
       );
       
       try {
@@ -549,9 +553,9 @@
       } catch (e) {
         stopLoading();
         if (e.message === 'timeout') {
-          showError("⏱️ Délai d'attente dépassé. Le serveur met trop de temps à répondre.");
+          showError("⏱️ Délai dépassé. Le serveur met trop de temps à répondre.\n\n💡 Essayez de télécharger la vidéo sur votre appareil et utilisez l'onglet 'Fichier Local'.");
         } else {
-          showError("❌ Erreur de connexion au serveur. Vérifiez votre connexion internet.");
+          showError("❌ Erreur de connexion. Vérifiez votre connexion internet et réessayez.");
         }
       }
     }
@@ -559,13 +563,19 @@
     async function analyzeFile() {
       if (!selectedFile) return showError("Veuillez sélectionner un fichier.");
 
-      startLoading("Analyse du fichier audio...");
+      // Vérifier la taille du fichier (max 50 MB)
+      const maxSize = 50 * 1024 * 1024;
+      if (selectedFile.size > maxSize) {
+        return showError("❌ Fichier trop volumineux (max 50 MB).\n\n💡 Essayez de couper un extrait de 30 secondes avec une application de montage.");
+      }
+
+      startLoading("🎵 Analyse du fichier en cours... (peut prendre 20-40 secondes)");
       const formData = new FormData();
       formData.append('file', selectedFile);
 
-      // Create timeout promise
+      // Timeout 120 secondes pour les gros fichiers
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('timeout')), 60000)
+        setTimeout(() => reject(new Error('timeout')), 120000)
       );
 
       try {
@@ -579,9 +589,9 @@
       } catch (e) {
         stopLoading();
         if (e.message === 'timeout') {
-          showError("⏱️ Délai d'attente dépassé. Le fichier est peut-être trop volumineux.");
+          showError("⏱️ Délai dépassé. Le fichier est peut-être trop volumineux.\n\n💡 Essayez avec un fichier plus court (30 secondes max) ou un format MP3.");
         } else {
-          showError("❌ Erreur de connexion au serveur. Vérifiez votre connexion internet.");
+          showError("❌ Erreur de connexion. Vérifiez votre connexion internet et réessayez.");
         }
       }
     }
