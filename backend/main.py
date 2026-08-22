@@ -23,6 +23,11 @@ app = FastAPI(title="PasteFind API", version="3.0")
 AUDD_API_TOKEN = os.getenv('AUDD_API_TOKEN', '')
 AUDD_API_URL = 'https://api.audd.io/'
 
+# Hard server-side cap on uploaded file size (bytes). The frontend also
+# checks 50 MB client-side, but that check is trivial to bypass by calling
+# the API directly, so the real limit has to live here.
+MAX_UPLOAD_BYTES = 60 * 1024 * 1024
+
 # CORS - allow all origins
 app.add_middleware(
     CORSMiddleware,
@@ -320,8 +325,10 @@ async def analyze_video(data: VideoURL):
                 "error": "❌ Lien invalide. Veuillez coller un lien complet (commençant par https://)"
             })
 
-        # Download audio
-        audio_path = download_audio(url)
+        # Download audio. These are blocking (network + subprocess) calls —
+        # run them in a worker thread so one slow download doesn't freeze the
+        # event loop and every other visitor's request along with it.
+        audio_path = await asyncio.to_thread(download_audio, url)
 
         if not audio_path:
             platform = "ce site"
@@ -339,10 +346,10 @@ async def analyze_video(data: VideoURL):
             })
 
         # Truncate if too large
-        audio_path = truncate_audio_if_needed(audio_path)
+        audio_path = await asyncio.to_thread(truncate_audio_if_needed, audio_path)
 
         # Analyze
-        result = analyze_with_audd(audio_path)
+        result = await asyncio.to_thread(analyze_with_audd, audio_path)
 
         # Cleanup
         try:
@@ -385,9 +392,22 @@ async def upload_file(file: UploadFile = File(...)):
                 "error": f"❌ Format non supporté : .{file_ext}\n\nFormats acceptés : MP3, MP4, WAV, M4A, WEBM, OGG, AAC, FLAC"
             })
 
-        # Save to temp
+        # Save to temp. Read in bounded chunks instead of file.read() in one
+        # shot — an unbounded read lets anyone crash the server by posting a
+        # multi-GB body (the 50 MB check in the browser is trivial to skip).
         temp_path = f"/tmp/{uuid.uuid4()}.{file_ext}"
-        content = await file.read()
+        content = bytearray()
+        chunk_size = 1024 * 1024
+        while True:
+            chunk = await file.read(chunk_size)
+            if not chunk:
+                break
+            content.extend(chunk)
+            if len(content) > MAX_UPLOAD_BYTES:
+                return JSONResponse(status_code=413, content={
+                    "error": "❌ Fichier trop volumineux (max 60 Mo).\n\n💡 Essayez de couper un extrait de 30 secondes."
+                })
+        content = bytes(content)
 
         if len(content) == 0:
             return JSONResponse(status_code=400, content={"error": "❌ Le fichier est vide."})
@@ -398,10 +418,10 @@ async def upload_file(file: UploadFile = File(...)):
         logger.info(f"[/api/upload] Saved: {temp_path} ({len(content)} bytes)")
 
         # Truncate if too large
-        temp_path = truncate_audio_if_needed(temp_path)
+        temp_path = await asyncio.to_thread(truncate_audio_if_needed, temp_path)
 
         # Analyze
-        result = analyze_with_audd(temp_path)
+        result = await asyncio.to_thread(analyze_with_audd, temp_path)
 
         # Cleanup
         try:
