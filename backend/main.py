@@ -461,14 +461,27 @@ async def privacy_policy():
 </head>
 <body>
     <h1>Politique de Confidentialité - PasteFind</h1>
-    <p><em>Dernière mise à jour : 27 février 2026</em></p>
+    <p><em>Dernière mise à jour : 22 août 2026</em></p>
+
     <h2>1. Introduction</h2>
-    <p>PasteFind respecte votre vie privée. Cette politique explique comment nous collectons et utilisons vos données.</p>
-    <h2>2. Données collectées</h2>
-    <p>Nous collectons : enregistrements audio temporaires (supprimés après identification), URLs vidéo soumises, historique local de recherche.</p>
-    <h2>3. Utilisation</h2>
-    <p>Les données sont utilisées uniquement pour identifier la musique via les services AudD.io et ACRCloud.</p>
-    <h2>4. Contact</h2>
+    <p>PasteFind identifie un morceau de musique à partir d'un lien vidéo ou d'un fichier audio que vous fournissez. Cette politique décrit exactement quelles données sont traitées, pourquoi, et combien de temps elles sont conservées.</p>
+
+    <h2>2. Données traitées</h2>
+    <p>Selon ce que vous soumettez, PasteFind traite :</p>
+    <ul>
+        <li><strong>Le fichier audio ou vidéo que vous envoyez</strong>, ou l'enregistrement effectué depuis votre microphone si vous utilisez cette fonction.</li>
+        <li><strong>L'adresse (URL) de la vidéo</strong> que vous collez, lorsque vous utilisez le mode « Lien Vidéo ». La vidéo correspondante est alors téléchargée temporairement pour en extraire l'audio.</li>
+    </ul>
+    <p>PasteFind ne demande pas de compte, ne collecte ni nom, ni adresse e-mail, ni donnée de localisation, et n'utilise ni cookie publicitaire ni traceur.</p>
+
+    <h2>3. Utilisation et conservation</h2>
+    <p>Seuls les 30 premières secondes de l'audio sont analysées. Cet extrait est transmis au service de reconnaissance musicale <a href="https://audd.io" target="_blank" rel="noopener">AudD.io</a>, qui l'utilise pour identifier le morceau et nous renvoyer son titre, son artiste et sa pochette. Le traitement d'AudD.io est régi par sa propre politique de confidentialité.</p>
+    <p>Le fichier temporaire créé sur nos serveurs est <strong>supprimé immédiatement après l'analyse</strong>. Aucun historique de vos recherches n'est conservé, ni sur nos serveurs, ni sur votre appareil.</p>
+
+    <h2>4. Vos droits</h2>
+    <p>Puisqu'aucune donnée n'est conservée après l'analyse et qu'aucun compte n'est créé, il n'existe aucune donnée personnelle vous concernant à consulter, corriger ou supprimer. Pour toute question, vous pouvez nous écrire à l'adresse ci-dessous.</p>
+
+    <h2>5. Contact</h2>
     <p>Email : <a href="mailto:contact@pastefind.com">contact@pastefind.com</a></p>
     <p>© 2026 PasteFind. Tous droits réservés.</p>
 </body>
