@@ -1,0 +1,35 @@
+{
+  "name": "PasteFind — Trouve la musique d'une vidéo",
+  "short_name": "PasteFind",
+  "description": "Colle un lien TikTok, Facebook ou Instagram, dépose un fichier audio ou laisse le micro écouter : PasteFind identifie le morceau et te dit où l'écouter.",
+  "lang": "fr",
+  "dir": "ltr",
+  "start_url": "/",
+  "scope": "/",
+  "id": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0B0C10",
+  "theme_color": "#0B0C10",
+  "categories": ["music", "utilities"],
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
