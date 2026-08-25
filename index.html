@@ -1,663 +1,693 @@
 <!DOCTYPE html>
 <html lang="fr">
-
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PasteFind - Scanner Musical & Identificateur IA</title>
-  <link rel="icon" type="image/png" href="/favicon.png">
-  <link rel="apple-touch-icon" href="/logo.png">
-  <meta name="description" content="PasteFind - Identifiez n'importe quelle musique depuis TikTok, Facebook, Instagram ou votre microphone. Scanner musical IA gratuit.">
-  <meta property="og:title" content="PasteFind - Scanner Musical & Identificateur IA">
-  <meta property="og:description" content="Identifiez n'importe quelle musique depuis TikTok, Facebook, Instagram ou votre microphone.">
-  <meta property="og:image" content="https://pastefind.com/logo.png">
-  <meta name="twitter:card" content="summary_large_image">
-  <style>
-    /* STYLE GLOBAL - DARK MODE STUDIO */
-    body {
-      margin: 0;
-      padding: 0;
-      background-color: #0a0a0a;
-      background-image: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.9)), url('/bg-wave.png');
-      background-size: cover;
-      background-position: center;
-      background-attachment: fixed;
-      color: white;
-      font-family: 'Segoe UI', Roboto, sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      overflow-x: hidden;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PasteFind — Trouve la musique d'une vidéo</title>
+<meta name="description" content="Colle un lien TikTok, Facebook ou Instagram, dépose un fichier audio ou laisse le micro écouter : PasteFind identifie le morceau et te dit où l'écouter.">
+<meta name="theme-color" content="#0B0C10">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<meta property="og:type" content="website">
+<meta property="og:title" content="PasteFind — Trouve la musique d'une vidéo">
+<meta property="og:description" content="Colle un lien, dépose un fichier ou laisse le micro écouter. PasteFind identifie le morceau en quelques secondes.">
+<meta property="og:url" content="https://pastefind.com">
+<meta property="og:image" content="https://pastefind.com/icon-512.png">
+<meta name="twitter:card" content="summary">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Archivo:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+  :root{
+    --ground:#0B0C10; --ground-2:#0F1116; --panel:#15171E; --panel-2:#1C1F29;
+    --line:#272B36; --line-soft:#1E212A;
+    --ink:#F3F2EF; --ink-2:#9BA0AD; --ink-3:#666B7A;
+    --amber:#FFB224; --amber-2:#FFD27A; --amber-dim:#8A6118;
+    --ok:#4ADE9B; --bad:#FF7A70;
+    --r-lg:20px; --r-md:13px; --r-sm:9px;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0;min-height:100vh;background:var(--ground);
+    background-image:
+      radial-gradient(1100px 620px at 50% -12%, rgba(255,178,36,.085), transparent 62%),
+      radial-gradient(760px 460px at 88% 104%, rgba(255,178,36,.035), transparent 60%);
+    background-attachment:fixed;
+    color:var(--ink);font-family:'Archivo',system-ui,-apple-system,sans-serif;
+    font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased;
+    padding:0 18px calc(64px + env(safe-area-inset-bottom));
+  }
+  ::selection{background:var(--amber);color:#14100A}
+  .shell{width:100%;max-width:540px;margin:0 auto}
+  button,input{font:inherit;color:inherit}
+  button{cursor:pointer;border:none;background:none}
+  :focus-visible{outline:2px solid var(--amber);outline-offset:3px;border-radius:6px}
+  a{color:var(--ink)}
 
-    .container {
-      text-align: center;
-      z-index: 10;
-      width: 90%;
-      max-width: 600px;
-      padding: 20px;
-    }
+  header.top{display:flex;align-items:center;justify-content:space-between;padding:calc(26px + env(safe-area-inset-top)) 2px 30px}
+  .brand{display:flex;align-items:center;gap:11px}
+  .glyph{width:30px;height:30px;flex:none;border-radius:50%;
+    background:radial-gradient(circle at 50% 50%,var(--ground) 0 15%,transparent 15.5%),
+      repeating-radial-gradient(circle at 50% 50%,var(--amber) 0 1px,transparent 1px 3.2px);
+    box-shadow:0 0 0 1px var(--line),0 0 22px rgba(255,178,36,.28)}
+  .word{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;letter-spacing:-.025em}
+  .word em{font-style:normal;color:var(--amber)}
+  .badge{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--ink-3);border:1px solid var(--line);padding:4px 9px;border-radius:99px}
 
-    h1 {
-      font-family: 'Arial Black', sans-serif;
-      letter-spacing: 3px;
-      margin-bottom: 5px;
-      font-size: 3em;
-      text-shadow: 0 0 20px rgba(255, 0, 127, 0.5);
-    }
+  .pitch{padding:0 2px 26px}
+  .pitch h1{font-family:'Syne',sans-serif;font-weight:700;font-size:clamp(30px,8.4vw,40px);
+    line-height:1.06;letter-spacing:-.03em;margin:0 0 12px;text-wrap:balance}
+  .pitch h1 span{color:var(--amber)}
+  .pitch p{margin:0;color:var(--ink-2);font-size:16.5px;max-width:40ch}
 
-    .gradient-text {
-      background: linear-gradient(to right, #ff007f, #8A2BE2, #00d4ff);
-      background-clip: text;
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
+  .console{background:linear-gradient(180deg,var(--panel) 0%,var(--ground-2) 100%);
+    border:1px solid var(--line);border-radius:var(--r-lg);padding:8px 8px 20px;
+    box-shadow:0 1px 0 rgba(255,255,255,.03) inset,0 26px 60px -34px #000}
+  .modes{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;background:var(--ground);border-radius:var(--r-md);padding:4px}
+  .mode{display:flex;align-items:center;justify-content:center;gap:7px;padding:11px 4px;border-radius:10px;
+    font-size:13.5px;font-weight:500;color:var(--ink-3);transition:background .18s,color .18s}
+  .mode svg{width:15px;height:15px;flex:none}
+  .mode:hover{color:var(--ink-2)}
+  .mode[aria-selected="true"]{background:var(--panel-2);color:var(--ink);box-shadow:0 1px 0 rgba(255,255,255,.04) inset}
+  .mode[aria-selected="true"] svg{color:var(--amber)}
+  .stage{padding:20px 12px 0}
 
-    /* GLASSMORPHISM CARD */
-    .glass-panel {
-      background: rgba(255, 255, 255, 0.05);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 20px;
-      padding: 30px;
-      margin-top: 30px;
-      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
-    }
+  .field{display:flex;align-items:center;gap:10px;background:var(--ground);border:1px solid var(--line);
+    border-radius:var(--r-md);padding:0 14px;transition:border-color .18s,box-shadow .18s}
+  .field:focus-within{border-color:var(--amber-dim);box-shadow:0 0 0 3px rgba(255,178,36,.10)}
+  .field svg{width:16px;height:16px;color:var(--ink-3);flex:none}
+  .field input{flex:1;min-width:0;background:none;border:none;outline:none;padding:15px 0;font-size:15.5px}
+  .field input::placeholder{color:var(--ink-3)}
+  .hint{margin:11px 2px 0;font-size:13px;color:var(--ink-3);line-height:1.5}
+  .hint b{color:var(--ink-2);font-weight:500}
 
-    /* TABS */
-    .tab-container {
-      display: flex;
-      justify-content: center;
-      margin-bottom: 20px;
-      gap: 20px;
-    }
+  .drop{border:1px dashed var(--line);border-radius:var(--r-md);padding:30px 18px;text-align:center;
+    transition:border-color .18s,background .18s;position:relative}
+  .drop.armed{border-color:var(--amber-dim);background:rgba(255,178,36,.05)}
+  .drop .ic{width:30px;height:30px;margin:0 auto 12px;color:var(--ink-3)}
+  .drop.armed .ic{color:var(--amber)}
+  .drop .t{font-size:15px;font-weight:500}
+  .drop .s{font-size:13px;color:var(--ink-3);margin-top:4px}
+  .drop .file{font-family:'JetBrains Mono',monospace;font-size:12.5px;color:var(--amber-2);margin-top:9px;word-break:break-all}
+  #picker{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
 
-    .tab {
-      cursor: pointer;
-      padding: 10px 20px;
-      border-bottom: 2px solid transparent;
-      color: rgba(255, 255, 255, 0.5);
-      transition: 0.3s;
-      font-weight: 500;
-    }
+  .mic-stage{text-align:center;padding:12px 0 4px}
+  .mic-btn{width:92px;height:92px;border-radius:50%;margin:0 auto;display:grid;place-items:center;
+    background:var(--panel-2);border:1px solid var(--line);color:var(--amber);transition:transform .18s,box-shadow .18s}
+  .mic-btn:hover{transform:scale(1.04);box-shadow:0 0 34px rgba(255,178,36,.22)}
+  .mic-btn.rec{background:var(--amber);color:#17120A;animation:pulse 1.3s ease-in-out infinite}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,178,36,.45)}50%{box-shadow:0 0 0 18px rgba(255,178,36,0)}}
+  .mic-btn svg{width:32px;height:32px}
+  .mic-stage .s{font-size:13.5px;color:var(--ink-3);margin-top:14px}
 
-    .tab.active {
-      color: white;
-      border-bottom-color: #ff007f;
-    }
+  .go{width:100%;margin-top:18px;padding:16px;border-radius:var(--r-md);background:var(--amber);color:#17120A;
+    font-family:'Syne',sans-serif;font-weight:700;font-size:15.5px;letter-spacing:.015em;
+    display:flex;align-items:center;justify-content:center;gap:9px;transition:filter .18s,transform .1s}
+  .go:hover:not(:disabled){filter:brightness(1.08)}
+  .go:active:not(:disabled){transform:translateY(1px)}
+  .go:disabled{background:var(--panel-2);color:var(--ink-3);cursor:not-allowed}
+  .go svg{width:17px;height:17px}
 
-    .tab-content {
-      display: none;
-    }
+  .scan{padding:26px 12px 4px;display:none}
+  .scan.on{display:block}
+  .meter{display:flex;align-items:flex-end;gap:3px;height:56px}
+  .meter i{flex:1;background:var(--amber-dim);border-radius:1.5px;height:12%;transform-origin:bottom;
+    animation:vu 1.15s ease-in-out infinite}
+  @keyframes vu{0%,100%{height:12%;background:var(--amber-dim)}50%{height:var(--peak,60%);background:var(--amber)}}
+  .scan-txt{margin-top:18px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:12px;
+    letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2)}
+  .scan-sub{text-align:center;font-size:12.5px;color:var(--ink-3);margin-top:7px}
 
-    .tab-content.active {
-      display: block;
-      animation: fadeIn 0.3s;
-    }
+  .result{margin-top:16px;display:none}
+  .result.on{display:block;animation:rise .5s cubic-bezier(.2,.7,.3,1) both}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden}
+  .card-top{display:flex;gap:16px;padding:18px;align-items:center}
+  .sleeve{width:92px;height:92px;flex:none;border-radius:10px;position:relative;overflow:hidden;
+    box-shadow:0 10px 26px -12px #000;background:var(--panel-2)}
+  .sleeve .disc{position:absolute;inset:0;
+    background:radial-gradient(circle at 50% 50%,rgba(0,0,0,.9) 0 8%,transparent 8.5%),
+      repeating-radial-gradient(circle at 50% 50%,rgba(255,255,255,.09) 0 1px,transparent 1px 4px),
+      linear-gradient(135deg,#5A4520,#241A0C)}
+  .sleeve img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none}
+  .sleeve img.on{display:block}
+  .meta{min-width:0;flex:1}
+  .meta .lbl{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.13em;text-transform:uppercase;
+    color:var(--ok);margin-bottom:7px;display:flex;align-items:center;gap:6px}
+  .meta .lbl::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--ok)}
+  .meta .title{font-family:'Syne',sans-serif;font-weight:700;font-size:21px;line-height:1.14;
+    letter-spacing:-.02em;margin-bottom:3px;overflow-wrap:anywhere}
+  .meta .artist{color:var(--ink-2);font-size:14.5px;overflow-wrap:anywhere}
+  .links{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line-soft);border-top:1px solid var(--line-soft)}
+  .plat{background:var(--panel);padding:14px 6px;text-align:center;font-size:12.5px;font-weight:500;color:var(--ink-2);
+    display:flex;flex-direction:column;align-items:center;gap:7px;text-decoration:none;transition:background .16s,color .16s}
+  .plat:hover{background:var(--panel-2);color:var(--ink)}
+  .plat svg{width:17px;height:17px}
+  .plat.sp svg{color:#1DB954}.plat.ap svg{color:#FC5C7D}.plat.yt svg{color:#FF4B4B}
+  .tools{display:flex;gap:8px;padding:12px;border-top:1px solid var(--line-soft)}
+  .tool{flex:1;padding:11px;border-radius:var(--r-sm);background:var(--panel-2);color:var(--ink-2);
+    font-size:13px;font-weight:500;display:flex;align-items:center;justify-content:center;gap:7px;
+    transition:background .16s,color .16s}
+  .tool:hover{background:var(--line);color:var(--ink)}
+  .tool svg{width:14px;height:14px}
+  .tool.done{color:var(--ok)}
 
-    /* INPUTS */
-    .input-group {
-      position: relative;
-      margin-bottom: 20px;
-    }
+  .oops{margin-top:16px;display:none}
+  .oops.on{display:block;animation:rise .4s ease both}
+  .oops-in{background:var(--panel);border:1px solid var(--line);border-radius:var(--r-md);padding:17px 19px}
+  .oops .h{font-weight:600;font-size:15px;margin-bottom:5px;color:var(--bad)}
+  .oops .b{font-size:14px;color:var(--ink-2);white-space:pre-line}
 
-    input[type="text"] {
-      width: 100%;
-      padding: 15px;
-      box-sizing: border-box;
-      border-radius: 30px;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      background: rgba(0, 0, 0, 0.3);
-      color: white;
-      font-size: 16px;
-      outline: none;
-      transition: 0.3s;
-    }
+  .hist{margin-top:40px}
+  .hist-hd{display:flex;align-items:baseline;justify-content:space-between;padding:0 2px 13px;
+    border-bottom:1px solid var(--line-soft);margin-bottom:6px}
+  .hist-hd h2{font-family:'JetBrains Mono',monospace;font-weight:500;font-size:11px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--ink-3);margin:0}
+  .clear{font-size:12.5px;color:var(--ink-3)}
+  .clear:hover{color:var(--bad)}
+  .row{display:flex;align-items:center;gap:13px;padding:12px 2px;border-bottom:1px solid var(--line-soft)}
+  .row:last-child{border-bottom:none}
+  .row .mini{width:36px;height:36px;border-radius:7px;flex:none;position:relative;overflow:hidden;background:var(--panel-2)}
+  .row .mini .disc{position:absolute;inset:0;
+    background:radial-gradient(circle at 50% 50%,rgba(0,0,0,.9) 0 9%,transparent 9.5%),
+      repeating-radial-gradient(circle at 50% 50%,rgba(255,255,255,.08) 0 1px,transparent 1px 3px),
+      linear-gradient(135deg,#5A4520,#241A0C)}
+  .row .mini img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .row .rt{min-width:0;flex:1}
+  .row .rt .a{font-size:14.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .row .rt .b{font-size:12.5px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .row .when{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink-3);flex:none}
+  .empty{padding:26px 2px;color:var(--ink-3);font-size:14px}
 
-    input[type="text"]:focus {
-      border-color: #ff007f;
-      box-shadow: 0 0 15px rgba(255, 0, 127, 0.2);
-    }
+  footer.foot{margin-top:46px;padding-top:22px;border-top:1px solid var(--line-soft)}
+  .trust{display:flex;gap:11px;align-items:flex-start;margin-bottom:18px}
+  .trust svg{width:16px;height:16px;color:var(--ok);flex:none;margin-top:2px}
+  .trust p{margin:0;font-size:13.5px;color:var(--ink-2);line-height:1.55}
+  .fine{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink-3)}
 
-    input[type="text"]::placeholder {
-      color: rgba(255, 255, 255, 0.5);
-    }
-
-    /* UPLOAD ZONE */
-    .upload-zone {
-      border: 2px dashed rgba(255, 255, 255, 0.2);
-      border-radius: 15px;
-      padding: 40px 20px;
-      text-align: center;
-      margin: 20px 0;
-      transition: 0.3s;
-      cursor: pointer;
-      background: rgba(0, 0, 0, 0.2);
-    }
-
-    .upload-zone:hover,
-    .upload-zone.dragover {
-      border-color: #00d4ff;
-      background: rgba(0, 212, 255, 0.1);
-    }
-
-    .upload-zone p {
-      margin: 10px 0 0 0;
-      color: rgba(255, 255, 255, 0.7);
-      font-size: 14px;
-    }
-
-    .upload-zone .icon {
-      font-size: 3em;
-      margin-bottom: 10px;
-    }
-
-    #fileInput {
-      display: none;
-    }
-
-    /* BUTTONS */
-    .button-row {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .btn-main {
-      flex: 1;
-      padding: 12px 30px;
-      border-radius: 25px;
-      border: none;
-      background: linear-gradient(45deg, #ff007f, #8A2BE2);
-      color: white;
-      font-weight: bold;
-      font-size: 16px;
-      cursor: pointer;
-      transition: 0.3s;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      box-shadow: 0 5px 15px rgba(138, 43, 226, 0.4);
-    }
-
-    .btn-main:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 25px rgba(255, 0, 127, 0.6);
-    }
-
-    .btn-main:disabled {
-      opacity: 0.7;
-      cursor: not-allowed;
-      transform: none;
-    }
-
-    .btn-mic {
-      padding: 12px 20px;
-      border-radius: 50%;
-      border: none;
-      background: rgba(255, 255, 255, 0.1);
-      color: white;
-      font-size: 1.5em;
-      cursor: pointer;
-      transition: 0.3s;
-      width: 50px;
-      height: 50px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .btn-mic:hover {
-      background: rgba(255, 0, 127, 0.3);
-      transform: scale(1.1);
-    }
-
-    .btn-mic.recording {
-      background: #ff007f;
-      animation: pulse 1s infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.6; }
-    }
-
-    /* RESULT CARD */
-    #result {
-      margin-top: 30px;
-      display: none;
-      animation: fadeIn 0.5s ease-out;
-    }
-
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(10px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    .cover-art {
-      width: 180px;
-      height: 180px;
-      border-radius: 15px;
-      margin-bottom: 20px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    /* PLATFORM BUTTONS */
-    .stream-buttons {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 15px;
-      margin-top: 25px;
-    }
-
-    .btn-neon {
-      display: inline-flex;
-      align-items: center;
-      padding: 10px 25px;
-      border-radius: 20px;
-      color: white;
-      text-decoration: none;
-      font-weight: bold;
-      font-size: 14px;
-      transition: 0.3s;
-      border: 1px solid transparent;
-      background: rgba(255, 255, 255, 0.05);
-    }
-
-    .btn-spotify {
-      border-color: #1DB954;
-      color: #1DB954;
-    }
-
-    .btn-spotify:hover {
-      background: #1DB954;
-      color: white;
-      box-shadow: 0 0 20px rgba(29, 185, 84, 0.4);
-    }
-
-    .btn-youtube {
-      border-color: #FF0000;
-      color: #FF0000;
-    }
-
-    .btn-youtube:hover {
-      background: #FF0000;
-      color: white;
-      box-shadow: 0 0 20px rgba(255, 0, 0, 0.4);
-    }
-
-    .btn-apple {
-      border-color: #FA243C;
-      color: #FA243C;
-    }
-
-    .btn-apple:hover {
-      background: #FA243C;
-      color: white;
-      box-shadow: 0 0 20px rgba(250, 36, 60, 0.4);
-    }
-
-    /* LOADING & PROGRESS */
-    .loader {
-      display: none;
-      margin-top: 20px;
-    }
-
-    .spinner {
-      width: 40px;
-      height: 40px;
-      border: 4px solid rgba(255, 255, 255, 0.1);
-      border-left-color: #ff007f;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin: 0 auto;
-    }
-
-    @keyframes spin {
-      100% {
-        transform: rotate(360deg);
-      }
-    }
-
-    .status-text {
-      margin-top: 10px;
-      font-size: 14px;
-      color: rgba(255, 255, 255, 0.7);
-    }
-
-    /* FOOTER */
-    .footer-note {
-      margin-top: 40px;
-      font-size: 12px;
-      color: rgba(255, 255, 255, 0.3);
-    }
-
-    /* ERROR */
-    .error-msg {
-      color: #ff4d4d;
-      background: rgba(255, 77, 77, 0.1);
-      padding: 10px;
-      border-radius: 10px;
-      margin-top: 15px;
-      font-size: 14px;
-      display: none;
-      border: 1px solid rgba(255, 77, 77, 0.3);
-    }
-  </style>
+  @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none !important;transition:none !important}}
+  @media (min-width:560px){.pitch{padding-bottom:32px}.stage{padding:22px 14px 0}}
+</style>
 </head>
-
 <body>
 
-  <div class="container">
-    <h1 class="gradient-text">PasteFind</h1>
-    <p style="text-transform: uppercase; font-size: 12px; letter-spacing: 2px; opacity: 0.8; margin-bottom: 30px;">
-      Scanner Musical & Identificateur IA
-    </p>
+<div class="shell">
 
-    <div class="glass-panel">
-      <!-- TABS -->
-      <div class="tab-container">
-        <div class="tab active" onclick="switchTab('url')">🔗 Lien Vidéo</div>
-        <div class="tab" onclick="switchTab('file')">📂 Fichier Local</div>
-      </div>
-
-      <!-- URL INPUT TAB -->
-      <div id="tab-url" class="tab-content active">
-        <div class="input-group">
-          <input type="text" id="videoUrl" placeholder="Colle un lien Facebook, TikTok, Instagram...">
-        </div>
-        <div class="button-row">
-          <button onclick="analyzeUrl()" id="btnUrl" class="btn-main">Analyser le lien</button>
-          <button onclick="startMicRecording()" id="btnMic" class="btn-mic" title="Enregistrer audio (10s)">🎙️</button>
-        </div>
-      </div>
-
-      <!-- FILE UPLOAD TAB -->
-      <div id="tab-file" class="tab-content">
-        <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
-          <div class="icon">☁️</div>
-          <p><strong>Glissez votre fichier ici</strong></p>
-          <p>ou cliquez pour parcourir (MP3, MP4, WAV)</p>
-          <p id="fileName" style="color: #00d4ff; margin-top: 10px;"></p>
-        </div>
-        <input type="file" id="fileInput" accept=".mp3,.mp4,.wav,.m4a" onchange="handleFileSelect(event)">
-        <div class="button-row">
-          <button onclick="analyzeFile()" id="btnFile" class="btn-main" disabled>Analyser le fichier</button>
-          <button onclick="startMicRecording()" id="btnMic2" class="btn-mic" title="Enregistrer audio (10s)">🎙️</button>
-        </div>
-      </div>
-
-      <!-- ERROR MESSAGE -->
-      <div id="errorMsg" class="error-msg"></div>
-
-      <!-- LOADER -->
-      <div id="loader" class="loader">
-        <div class="spinner"></div>
-        <p id="statusText" class="status-text">Analyse en cours...</p>
-      </div>
+  <header class="top">
+    <div class="brand">
+      <div class="glyph" aria-hidden="true"></div>
+      <div class="word">Paste<em>Find</em></div>
     </div>
+    <div class="badge">pastefind.com</div>
+  </header>
 
-    <div id="result">
-      <!-- Content injected by JS -->
-    </div>
-
-    <p class="footer-note">v2.0 - Powered by PasteFind Engine</p>
-
+  <div class="pitch">
+    <h1>Cette musique,<br>tu l'as <span>trouvée</span>.</h1>
+    <p>Colle un lien, dépose un fichier ou laisse le micro écouter. On te dit quel morceau c'est, et où l'écouter.</p>
   </div>
 
-  <script>
-    // 🟢 CONFIG
-    // L'API est sur le même domaine (pastefind.com = pastefind.onrender.com)
-    const API_BASE = window.location.origin.includes('localhost') 
-      ? 'http://localhost:10000' 
-      : 'https://pastefind.onrender.com';
+  <div class="console">
+    <div class="modes" role="tablist" aria-label="Méthode d'identification">
+      <button class="mode" role="tab" id="m-link" aria-selected="true" aria-controls="s-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>
+        Lien
+      </button>
+      <button class="mode" role="tab" id="m-file" aria-selected="false" aria-controls="s-file">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v5h5"/><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9l5 5v11a2 2 0 0 1-2 2z"/></svg>
+        Fichier
+      </button>
+      <button class="mode" role="tab" id="m-mic" aria-selected="false" aria-controls="s-mic">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v4"/></svg>
+        Micro
+      </button>
+    </div>
 
-    let selectedFile = null;
-    let mediaRecorder = null;
-    let audioChunks = [];
+    <div class="stage">
 
-    // --- TAB SWITCHING ---
-    function switchTab(tabName) {
-      // Update tabs
-      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-      
-      if (tabName === 'url') {
-        document.querySelectorAll('.tab')[0].classList.add('active');
-        document.getElementById('tab-url').classList.add('active');
-      } else {
-        document.querySelectorAll('.tab')[1].classList.add('active');
-        document.getElementById('tab-file').classList.add('active');
-      }
-      
-      // Clear errors
-      document.getElementById('errorMsg').style.display = 'none';
-      document.getElementById('result').style.display = 'none';
-    }
+      <div id="s-link" role="tabpanel" aria-labelledby="m-link">
+        <label class="field">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>
+          <input id="url" type="text" inputmode="url" placeholder="Colle ton lien TikTok, Facebook, Instagram…" autocomplete="off" spellcheck="false">
+        </label>
+        <p class="hint">Fonctionne avec <b>TikTok</b>, <b>Facebook</b> et <b>Instagram</b>. Pour YouTube, télécharge la vidéo et passe par l'onglet Fichier.</p>
+      </div>
 
-    // --- FILE HANDLING ---
-    function handleFileSelect(event) {
-      selectedFile = event.target.files[0];
-      if (selectedFile) {
-        document.getElementById('fileName').innerText = `✅ ${selectedFile.name}`;
-        document.getElementById('btnFile').disabled = false;
-      }
-    }
-
-    // Drag & Drop
-    const uploadZone = document.getElementById('uploadZone');
-    uploadZone.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      uploadZone.classList.add('dragover');
-    });
-    uploadZone.addEventListener('dragleave', () => {
-      uploadZone.classList.remove('dragover');
-    });
-    uploadZone.addEventListener('drop', (e) => {
-      e.preventDefault();
-      uploadZone.classList.remove('dragover');
-      const files = e.dataTransfer.files;
-      if (files.length > 0) {
-        selectedFile = files[0];
-        document.getElementById('fileName').innerText = `✅ ${selectedFile.name}`;
-        document.getElementById('btnFile').disabled = false;
-      }
-    });
-
-    // --- MICROPHONE RECORDING ---
-    async function startMicRecording() {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRecorder = new MediaRecorder(stream);
-        audioChunks = [];
-
-        mediaRecorder.ondataavailable = (event) => {
-          audioChunks.push(event.data);
-        };
-
-        mediaRecorder.onstop = async () => {
-          const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-          const audioFile = new File([audioBlob], 'recording.webm', { type: 'audio/webm' });
-          
-          // Stop all tracks
-          stream.getTracks().forEach(track => track.stop());
-          
-          // Switch to file tab and analyze
-          switchTab('file');
-          selectedFile = audioFile;
-          document.getElementById('fileName').innerText = `✅ ${audioFile.name} (Enregistrement)`;
-          document.getElementById('btnFile').disabled = false;
-          
-          // Auto-analyze
-          analyzeFile();
-        };
-
-        // Start recording
-        mediaRecorder.start();
-        
-        // Visual feedback
-        document.getElementById('btnMic').classList.add('recording');
-        document.getElementById('btnMic2').classList.add('recording');
-        
-        // Stop after 10 seconds
-        setTimeout(() => {
-          if (mediaRecorder && mediaRecorder.state === 'recording') {
-            mediaRecorder.stop();
-            document.getElementById('btnMic').classList.remove('recording');
-            document.getElementById('btnMic2').classList.remove('recording');
-          }
-        }, 10000);
-        
-        showError("🎙️ Enregistrement en cours... (10 secondes max)");
-        
-      } catch (err) {
-        console.error('Microphone error:', err);
-        showError("❌ Impossible d'accéder au microphone. Vérifiez les permissions.");
-      }
-    }
-
-    // --- API CALLS ---
-    async function analyzeUrl() {
-      const url = document.getElementById('videoUrl').value.trim();
-      if (!url) return showError("Veuillez entrer un lien valide.");
-      if (!url.startsWith('http')) return showError("❌ Lien invalide. Copiez le lien complet depuis l'application (commençant par https://)");
-
-      startLoading("🔍 Extraction et analyse audio en cours... (peut prendre 30-60 secondes)");
-      
-      // Timeout 120 secondes pour les liens (téléchargement peut être lent)
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('timeout')), 120000)
-      );
-      
-      try {
-        const fetchPromise = fetch(`${API_BASE}/api/analyze`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url: url })
-        });
-        
-        const response = await Promise.race([fetchPromise, timeoutPromise]);
-        handleResponse(response);
-      } catch (e) {
-        stopLoading();
-        if (e.message === 'timeout') {
-          showError("⏱️ Délai dépassé. Le serveur met trop de temps à répondre.\n\n💡 Essayez de télécharger la vidéo sur votre appareil et utilisez l'onglet 'Fichier Local'.");
-        } else {
-          showError("❌ Erreur de connexion. Vérifiez votre connexion internet et réessayez.");
-        }
-      }
-    }
-
-    async function analyzeFile() {
-      if (!selectedFile) return showError("Veuillez sélectionner un fichier.");
-
-      // Vérifier la taille du fichier (max 50 MB)
-      const maxSize = 50 * 1024 * 1024;
-      if (selectedFile.size > maxSize) {
-        return showError("❌ Fichier trop volumineux (max 50 MB).\n\n💡 Essayez de couper un extrait de 30 secondes avec une application de montage.");
-      }
-
-      startLoading("🎵 Analyse du fichier en cours... (peut prendre 20-40 secondes)");
-      const formData = new FormData();
-      formData.append('file', selectedFile);
-
-      // Timeout 120 secondes pour les gros fichiers
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('timeout')), 120000)
-      );
-
-      try {
-        const fetchPromise = fetch(`${API_BASE}/api/upload`, {
-          method: 'POST',
-          body: formData
-        });
-        
-        const response = await Promise.race([fetchPromise, timeoutPromise]);
-        handleResponse(response);
-      } catch (e) {
-        stopLoading();
-        if (e.message === 'timeout') {
-          showError("⏱️ Délai dépassé. Le fichier est peut-être trop volumineux.\n\n💡 Essayez avec un fichier plus court (30 secondes max) ou un format MP3.");
-        } else {
-          showError("❌ Erreur de connexion. Vérifiez votre connexion internet et réessayez.");
-        }
-      }
-    }
-
-    async function handleResponse(response) {
-      try {
-        const data = await response.json();
-        stopLoading();
-
-        if (!response.ok || data.error) {
-          showError(data.error || "Une erreur inconnue est survenue.");
-          return;
-        }
-
-        displayResult(data);
-      } catch (e) {
-        stopLoading();
-        showError("Erreur de lecture de la réponse serveur.");
-      }
-    }
-
-    // --- UI HELPERS ---
-    function displayResult(data) {
-      const resultDiv = document.getElementById('result');
-      const appleBtn = data.apple_music ? `<a href="${data.apple_music}" target="_blank" class="btn-neon btn-apple">APPLE MUSIC</a>` : '';
-      const spotifyBtn = data.spotify_url ? `<a href="${data.spotify_url}" target="_blank" class="btn-neon btn-spotify">SPOTIFY</a>` : '';
-      const youtubeBtn = data.youtube_url ? `<a href="${data.youtube_url}" target="_blank" class="btn-neon btn-youtube">YOUTUBE</a>` : '';
-
-      resultDiv.innerHTML = `
-        <div class="glass-panel" style="border-color: rgba(0, 212, 255, 0.3);">
-          <img src="${data.image}" class="cover-art" alt="Cover" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 200 200%22%3E%3Crect fill=%22%23333%22 width=%22200%22 height=%22200%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 fill=%22%23fff%22 text-anchor=%22middle%22 dy=%22.3em%22 font-size=%2220%22%3ENo Cover%3C/text%3E%3C/svg%3E'">
-          <h2 style="margin: 5px 0;">${data.title}</h2>
-          <p style="opacity: 0.7; font-size: 1.1em; color: #00d4ff;">${data.subtitle}</p>
-          
-          <div class="stream-buttons">
-            ${appleBtn}
-            ${spotifyBtn}
-            ${youtubeBtn}
-          </div>
+      <div id="s-file" role="tabpanel" aria-labelledby="m-file" hidden>
+        <div class="drop" id="drop">
+          <input type="file" id="picker" accept="audio/*,video/*,.mp3,.mp4,.wav,.m4a,.webm,.ogg,.aac,.flac" aria-label="Choisir un fichier">
+          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+          <div class="t">Dépose ton fichier ici</div>
+          <div class="s">ou touche pour parcourir · MP3, MP4, WAV, M4A</div>
+          <div class="file" id="fname" hidden></div>
         </div>
-      `;
-      resultDiv.style.display = 'block';
-    }
+        <p class="hint">Jusqu'à <b>50 Mo</b>. Seules les 30 premières secondes sont analysées.</p>
+      </div>
 
-    function startLoading(msg) {
-      document.getElementById('result').style.display = 'none';
-      document.getElementById('errorMsg').style.display = 'none';
-      document.getElementById('loader').style.display = 'block';
-      document.getElementById('statusText').innerText = msg;
-      document.getElementById('btnUrl').disabled = true;
-      document.getElementById('btnFile').disabled = true;
-    }
+      <div id="s-mic" role="tabpanel" aria-labelledby="m-mic" hidden>
+        <div class="mic-stage">
+          <button class="mic-btn" id="micbtn" aria-label="Écouter autour de moi">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v4"/></svg>
+          </button>
+          <p class="s" id="micsub">Touche pour écouter ce qui joue autour de toi.<br>Dix secondes suffisent.</p>
+        </div>
+      </div>
 
-    function stopLoading() {
-      document.getElementById('loader').style.display = 'none';
-      document.getElementById('btnUrl').disabled = false;
-      if (selectedFile) {
-        document.getElementById('btnFile').disabled = false;
+      <button class="go" id="go">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/></svg>
+        <span id="golabel">Identifier</span>
+      </button>
+
+      <div class="scan" id="scan" aria-live="polite">
+        <div class="meter" id="meter" aria-hidden="true"></div>
+        <div class="scan-txt" id="scantxt">Écoute en cours</div>
+        <div class="scan-sub" id="scansub">Extraction de l'empreinte sonore…</div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="result" id="result" aria-live="polite">
+    <div class="card">
+      <div class="card-top">
+        <div class="sleeve" id="sleeve"><div class="disc"></div><img id="cover" alt=""></div>
+        <div class="meta">
+          <div class="lbl">Morceau identifié</div>
+          <div class="title" id="rtitle" translate="no">—</div>
+          <div class="artist" id="rartist" translate="no">—</div>
+        </div>
+      </div>
+      <div class="links">
+        <a class="plat sp" href="#" id="l-sp" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm4.6 14.4a.62.62 0 0 1-.86.21c-2.35-1.44-5.3-1.76-8.79-.97a.62.62 0 1 1-.28-1.22c3.81-.87 7.08-.49 9.72 1.12.29.18.39.57.21.86zm1.23-2.74a.78.78 0 0 1-1.07.26c-2.69-1.65-6.79-2.13-9.97-1.17a.78.78 0 1 1-.45-1.49c3.63-1.1 8.15-.56 11.24 1.33.36.22.48.7.25 1.07zm.11-2.86C14.72 8.88 9.5 8.7 6.42 9.63a.93.93 0 1 1-.54-1.79c3.54-1.07 9.3-.86 12.97 1.32a.93.93 0 1 1-.95 1.6z"/></svg>
+          Spotify
+        </a>
+        <a class="plat ap" href="#" id="l-ap" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M9 18V6l10-2v12"/><circle cx="6" cy="18" r="3"/><circle cx="16" cy="16" r="3"/></svg>
+          Apple Music
+        </a>
+        <a class="plat yt" href="#" id="l-yt" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="4"/><path d="m10 9 5 3-5 3z" fill="currentColor"/></svg>
+          YouTube
+        </a>
+      </div>
+      <div class="tools">
+        <button class="tool" id="copy">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+          <span id="copytxt">Copier le titre</span>
+        </button>
+        <button class="tool" id="share">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"/><path d="m8 8 4-4 4 4"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+          <span id="sharetxt">Partager</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="oops" id="oops">
+    <div class="oops-in">
+      <div class="h" id="oopsh">Musique non reconnue</div>
+      <div class="b" id="oopsb">Essaie avec un passage où la musique est plus forte.</div>
+    </div>
+  </div>
+
+  <section class="hist">
+    <div class="hist-hd">
+      <h2>Tes trouvailles</h2>
+      <button class="clear" id="clear" hidden>Tout effacer</button>
+    </div>
+    <div id="rows"></div>
+    <div class="empty" id="empty">Rien pour l'instant. Ce que tu identifies s'enregistre ici, sur ton appareil uniquement.</div>
+  </section>
+
+  <footer class="foot">
+    <div class="trust">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+      <p>Ton fichier est supprimé de nos serveurs dès l'analyse terminée. Aucun compte, aucune publicité, aucun traceur. <a href="/privacy/">Politique de confidentialité</a>.</p>
+    </div>
+    <div class="fine">PasteFind · contact@pastefind.com</div>
+  </footer>
+
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var API = 'https://pastefind.onrender.com';
+  var TIMEOUT = 120000;
+  var MAX_BYTES = 50 * 1024 * 1024;
+
+  function $(id) { return document.getElementById(id); }
+
+  var store = {
+    read: function () { try { return JSON.parse(localStorage.getItem('pf.finds') || '[]'); } catch (e) { return []; } },
+    write: function (v) { try { localStorage.setItem('pf.finds', JSON.stringify(v.slice(0, 20))); } catch (e) {} }
+  };
+
+  /* ---- vu-mètre ---- */
+  var meter = $('meter');
+  for (var i = 0; i < 34; i++) {
+    var bar = document.createElement('i');
+    var env = Math.sin((i / 33) * Math.PI);
+    bar.style.setProperty('--peak', (24 + env * 62 + (i % 5) * 4) + '%');
+    bar.style.animationDelay = (-(i * 0.055)).toFixed(3) + 's';
+    meter.appendChild(bar);
+  }
+
+  /* ---- onglets ---- */
+  var mode = 'link';
+  var panels = { link: $('s-link'), file: $('s-file'), mic: $('s-mic') };
+  var tabs = { link: $('m-link'), file: $('m-file'), mic: $('m-mic') };
+
+  function setMode(next) {
+    mode = next;
+    for (var k in panels) {
+      panels[k].hidden = (k !== next);
+      tabs[k].setAttribute('aria-selected', String(k === next));
+    }
+    $('golabel').textContent = next === 'mic' ? 'Écouter maintenant' : 'Identifier';
+    hideAll();
+    refreshGo();
+  }
+  Object.keys(tabs).forEach(function (k) { tabs[k].addEventListener('click', function () { setMode(k); }); });
+
+  /* ---- entrées ---- */
+  var chosen = null;
+  var url = $('url');
+  url.addEventListener('input', refreshGo);
+  url.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !$('go').disabled) start(); });
+
+  var picker = $('picker'), drop = $('drop');
+  picker.addEventListener('change', function () { take(picker.files && picker.files[0]); });
+  ['dragenter', 'dragover'].forEach(function (ev) {
+    drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add('armed'); });
+  });
+  ['dragleave', 'drop'].forEach(function (ev) {
+    drop.addEventListener(ev, function (e) { e.preventDefault(); if (ev === 'dragleave') drop.classList.remove('armed'); });
+  });
+  drop.addEventListener('drop', function (e) {
+    var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    take(f);
+  });
+
+  function take(f) {
+    if (!f) return;
+    if (f.size > MAX_BYTES) {
+      chosen = null; drop.classList.remove('armed'); $('fname').hidden = true;
+      fail('Fichier trop volumineux', 'Ce fichier dépasse 50 Mo. Découpe un extrait de trente secondes et réessaie.');
+      refreshGo();
+      return;
+    }
+    chosen = f;
+    drop.classList.add('armed');
+    var n = $('fname');
+    n.hidden = false;
+    n.textContent = f.name + ' · ' + (f.size / 1048576).toFixed(1).replace('.', ',') + ' Mo';
+    hideAll();
+    refreshGo();
+  }
+
+  function refreshGo() {
+    var ok = mode === 'link' ? url.value.trim().length > 6
+           : mode === 'file' ? !!chosen
+           : true;
+    $('go').disabled = !ok || busy;
+  }
+
+  /* ---- micro ---- */
+  var recorder = null, chunks = [], micTimer = null;
+
+  $('micbtn').addEventListener('click', function () {
+    if (mode !== 'mic') { setMode('mic'); }
+    if (recorder && recorder.state === 'recording') { stopMic(); return; }
+    startMic();
+  });
+
+  function startMic() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      fail('Micro indisponible', 'Ton navigateur ne permet pas l’accès au microphone. Utilise l’onglet Fichier.');
+      return;
+    }
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
+      chunks = [];
+      try { recorder = new MediaRecorder(stream); }
+      catch (e) { stream.getTracks().forEach(function (t) { t.stop(); }); fail('Micro indisponible', 'Ton navigateur ne sait pas enregistrer l’audio. Utilise l’onglet Fichier.'); return; }
+
+      recorder.ondataavailable = function (e) { if (e.data && e.data.size) chunks.push(e.data); };
+      recorder.onstop = function () {
+        stream.getTracks().forEach(function (t) { t.stop(); });
+        $('micbtn').classList.remove('rec');
+        $('micsub').innerHTML = 'Touche pour écouter ce qui joue autour de toi.<br>Dix secondes suffisent.';
+        var blob = new Blob(chunks, { type: 'audio/webm' });
+        if (!blob.size) { fail('Rien n’a été enregistré', 'Réessaie en approchant le téléphone de la source sonore.'); return; }
+        chosen = new File([blob], 'micro.webm', { type: 'audio/webm' });
+        send();
+      };
+
+      recorder.start();
+      $('micbtn').classList.add('rec');
+      var left = 10;
+      $('micsub').textContent = 'À l’écoute… ' + left + ' s';
+      micTimer = setInterval(function () {
+        left--;
+        if (left > 0) { $('micsub').textContent = 'À l’écoute… ' + left + ' s'; }
+      }, 1000);
+      setTimeout(stopMic, 10000);
+    }).catch(function () {
+      fail('Accès au micro refusé', 'Autorise le microphone dans les réglages de ton navigateur, ou utilise l’onglet Fichier.');
+    });
+  }
+
+  function stopMic() {
+    if (micTimer) { clearInterval(micTimer); micTimer = null; }
+    if (recorder && recorder.state === 'recording') recorder.stop();
+  }
+
+  /* ---- appel serveur ---- */
+  var busy = false, subTimer = null;
+
+  function hideAll() {
+    $('scan').classList.remove('on');
+    $('result').classList.remove('on');
+    $('oops').classList.remove('on');
+  }
+
+  function fail(head, body) {
+    hideAll();
+    $('oopsh').textContent = head;
+    $('oopsb').textContent = body;
+    $('oops').classList.add('on');
+  }
+
+  function scanning(on) {
+    busy = on;
+    if (on) {
+      hideAll();
+      $('scan').classList.add('on');
+      $('scantxt').textContent = mode === 'mic' ? 'Analyse de l’enregistrement' : 'Écoute en cours';
+      $('scansub').textContent = mode === 'link' ? 'Récupération de la vidéo…' : 'Extraction de l’empreinte sonore…';
+      subTimer = setTimeout(function () { $('scansub').textContent = 'Comparaison avec le catalogue…'; }, 4000);
+    } else {
+      if (subTimer) { clearTimeout(subTimer); subTimer = null; }
+      $('scan').classList.remove('on');
+    }
+    refreshGo();
+  }
+
+  function withTimeout(promise) {
+    return new Promise(function (resolve, reject) {
+      var t = setTimeout(function () { reject(new Error('timeout')); }, TIMEOUT);
+      promise.then(function (v) { clearTimeout(t); resolve(v); },
+                   function (e) { clearTimeout(t); reject(e); });
+    });
+  }
+
+  function start() {
+    if (busy) return;
+    if (mode === 'mic') { startMic(); return; }
+    send();
+  }
+  $('go').addEventListener('click', start);
+
+  function send() {
+    var req;
+    if (mode === 'link') {
+      var raw = url.value.trim();
+      var clean = /^https?:\/\//i.test(raw) ? raw : 'https://' + raw;
+      var host = '';
+      try { var u = new URL(clean); host = u.hostname; } catch (e) { host = ''; }
+      if (!host || host.indexOf('.') === -1) {
+        fail('Lien invalide', 'Copie le lien complet depuis l’application, il doit ressembler à https://…');
+        return;
       }
+      if (/youtube\.com|youtu\.be/i.test(clean)) {
+        fail('YouTube n’est pas accepté', 'YouTube bloque les téléchargements depuis un serveur. Télécharge la vidéo sur ton appareil et passe par l’onglet Fichier.');
+        return;
+      }
+      req = fetch(API + '/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: clean })
+      });
+    } else {
+      if (!chosen) return;
+      var fd = new FormData();
+      fd.append('file', chosen);
+      req = fetch(API + '/api/upload', { method: 'POST', body: fd });
     }
 
-    function showError(msg) {
-      const errDiv = document.getElementById('errorMsg');
-      errDiv.innerText = msg;
-      errDiv.style.display = 'block';
+    scanning(true);
+
+    withTimeout(req).then(function (r) {
+      return r.json().catch(function () { return null; });
+    }).then(function (data) {
+      scanning(false);
+      if (!data) { fail('Réponse illisible', 'Le serveur a répondu quelque chose d’inattendu. Réessaie dans un instant.'); return; }
+      if (data.error) { fail(titleFor(data.error), String(data.error).replace(/^[^\wÀ-ÿ]+/, '')); return; }
+      show(data);
+    }).catch(function (e) {
+      scanning(false);
+      if (e && e.message === 'timeout') {
+        fail('Délai dépassé', 'Le serveur met trop de temps. Télécharge la vidéo sur ton appareil et passe par l’onglet Fichier.');
+      } else {
+        fail('Connexion impossible', 'Vérifie ta connexion internet et réessaie.');
+      }
+    });
+  }
+
+  function titleFor(msg) {
+    var m = String(msg).toLowerCase();
+    if (m.indexOf('non reconnue') > -1) return 'Musique non reconnue';
+    if (m.indexOf('télécharger') > -1) return 'Vidéo inaccessible';
+    if (m.indexOf('volumineux') > -1) return 'Fichier trop volumineux';
+    if (m.indexOf('format') > -1) return 'Format non supporté';
+    return 'Analyse impossible';
+  }
+
+  /* ---- résultat ---- */
+  var current = null;
+
+  function show(d) {
+    var t = d.title || 'Titre inconnu';
+    var a = d.subtitle || 'Artiste inconnu';
+    current = { t: t, a: a, img: d.image || '', sp: d.spotify_url || '', ap: d.apple_music || '', yt: d.youtube_url || '' };
+
+    $('rtitle').textContent = t;
+    $('rartist').textContent = a;
+
+    var cover = $('cover');
+    cover.classList.remove('on');
+    if (d.image) {
+      cover.onload = function () { cover.classList.add('on'); };
+      cover.onerror = function () { cover.classList.remove('on'); };
+      cover.src = d.image;
+    } else {
+      cover.removeAttribute('src');
     }
-  </script>
+
+    var q = encodeURIComponent(t + ' ' + a);
+    $('l-sp').href = current.sp || ('https://open.spotify.com/search/' + q);
+    $('l-ap').href = current.ap || ('https://music.apple.com/search?term=' + q);
+    $('l-yt').href = current.yt || ('https://www.youtube.com/results?search_query=' + q);
+
+    $('copytxt').textContent = 'Copier le titre';
+    $('copy').classList.remove('done');
+
+    hideAll();
+    $('result').classList.add('on');
+    remember(current);
+  }
+
+  /* ---- outils ---- */
+  $('copy').addEventListener('click', function () {
+    if (!current) return;
+    var txt = current.t + ' — ' + current.a;
+    var done = function () {
+      $('copytxt').textContent = 'Copié';
+      $('copy').classList.add('done');
+      setTimeout(function () { $('copytxt').textContent = 'Copier le titre'; $('copy').classList.remove('done'); }, 1600);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(txt).then(done, done);
+    } else { done(); }
+  });
+
+  $('share').addEventListener('click', function () {
+    if (!current) return;
+    var txt = current.t + ' — ' + current.a + ' · trouvé avec PasteFind';
+    if (navigator.share) {
+      navigator.share({ title: 'PasteFind', text: txt, url: 'https://pastefind.com' }).catch(function () {});
+      return;
+    }
+    var done = function () {
+      $('sharetxt').textContent = 'Copié pour partage';
+      setTimeout(function () { $('sharetxt').textContent = 'Partager'; }, 1600);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(txt).then(done, done);
+    } else { done(); }
+  });
+
+  /* ---- historique ---- */
+  function remember(track) {
+    var list = store.read().filter(function (x) { return !(x.t === track.t && x.a === track.a); });
+    list.unshift({ t: track.t, a: track.a, img: track.img, at: Date.now() });
+    store.write(list);
+    paint();
+  }
+
+  function ago(ms) {
+    var s = Math.max(1, Math.round((Date.now() - ms) / 1000));
+    if (s < 60) return 'à l’instant';
+    var m = Math.round(s / 60); if (m < 60) return m + ' min';
+    var h = Math.round(m / 60); if (h < 24) return h + ' h';
+    return Math.round(h / 24) + ' j';
+  }
+
+  function paint() {
+    var list = store.read();
+    var rows = $('rows');
+    rows.textContent = '';
+    $('empty').hidden = list.length > 0;
+    $('clear').hidden = list.length === 0;
+
+    list.forEach(function (item) {
+      var row = document.createElement('div'); row.className = 'row';
+      var mini = document.createElement('div'); mini.className = 'mini';
+      var disc = document.createElement('div'); disc.className = 'disc';
+      mini.appendChild(disc);
+      if (item.img) {
+        var im = document.createElement('img');
+        im.alt = ''; im.loading = 'lazy';
+        im.onerror = function () { im.remove(); };
+        im.src = item.img;
+        mini.appendChild(im);
+      }
+      var rt = document.createElement('div'); rt.className = 'rt';
+      var a = document.createElement('div'); a.className = 'a'; a.textContent = item.t;
+      var b = document.createElement('div'); b.className = 'b'; b.textContent = item.a;
+      rt.appendChild(a); rt.appendChild(b);
+      var when = document.createElement('div'); when.className = 'when'; when.textContent = ago(item.at);
+      row.appendChild(mini); row.appendChild(rt); row.appendChild(when);
+      rows.appendChild(row);
+    });
+  }
+
+  $('clear').addEventListener('click', function () { store.write([]); paint(); });
+
+  paint();
+  refreshGo();
+
+  /* ---- application installable ---- */
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('/sw.js').catch(function () {});
+    });
+  }
+})();
+</script>
 </body>
-
 </html>
