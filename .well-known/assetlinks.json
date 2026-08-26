@@ -1,0 +1,11 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.pastefind.app",
+      "sha256_cert_fingerprints":
+        ["00:D4:20:90:FE:B7:5E:2F:71:28:0C:A8:BA:65:19:48:C3:3F:E1:53:70:4E:CD:17:C7:AB:1C:53:64:E4:DC:F9"]
+    }
+  }
+]
