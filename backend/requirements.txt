@@ -1,7 +1,7 @@
 fastapi
 uvicorn
 pydantic
-yt-dlp>=2025.01.12
+yt-dlp>=2026.8.19
 python-multipart
 jinja2
 requests

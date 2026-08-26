@@ -164,7 +164,7 @@ def analyze_with_audd(file_path: str) -> dict:
 # ─────────────────────────────────────────────
 # HELPER: Download audio with yt-dlp
 # ─────────────────────────────────────────────
-# Dernière erreur de téléchargement, pour diagnostic (temporaire).
+# Dernière erreur de téléchargement, conservée pour les journaux du serveur.
 LAST_DOWNLOAD_ERROR: dict[str, str] = {}
 
 def download_audio(url: str) -> str | None:
@@ -347,8 +347,7 @@ async def analyze_video(data: VideoURL):
                 platform = "YouTube"
 
             return JSONResponse(status_code=200, content={
-                "error": f"❌ Impossible de télécharger l'audio depuis {platform}.\n\n💡 Essayez de télécharger la vidéo sur votre appareil, puis utilisez l'onglet 'Fichier Local'.",
-                "detail": LAST_DOWNLOAD_ERROR.get('last', '')[:600]
+                "error": f"❌ Impossible de télécharger l'audio depuis {platform}.\n\n💡 Essayez de télécharger la vidéo sur votre appareil, puis utilisez l'onglet 'Fichier Local'."
             })
 
         # Truncate if too large
