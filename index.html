@@ -48,10 +48,9 @@
 
   header.top{display:flex;align-items:center;justify-content:space-between;padding:calc(26px + env(safe-area-inset-top)) 2px 30px}
   .brand{display:flex;align-items:center;gap:11px}
-  .glyph{width:30px;height:30px;flex:none;border-radius:50%;
-    background:radial-gradient(circle at 50% 50%,var(--ground) 0 15%,transparent 15.5%),
-      repeating-radial-gradient(circle at 50% 50%,var(--amber) 0 1px,transparent 1px 3.2px);
-    box-shadow:0 0 0 1px var(--line),0 0 22px rgba(255,178,36,.28)}
+  .glyph{width:32px;height:32px;flex:none;border-radius:50%;display:block;
+    object-fit:cover;background:#040404;
+    box-shadow:0 0 20px rgba(255,178,36,.26)}
   .word{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;letter-spacing:-.025em}
   .word em{font-style:normal;color:var(--amber)}
   .badge{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;
@@ -198,7 +197,7 @@
 
   <header class="top">
     <div class="brand">
-      <div class="glyph" aria-hidden="true"></div>
+      <img class="glyph" src="/icon-192.png" alt="" width="32" height="32" decoding="async">
       <div class="word">Paste<em>Find</em></div>
     </div>
     <div class="badge">pastefind.com</div>
