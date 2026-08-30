@@ -207,6 +207,48 @@ FFMPEG_DIR = trouver_dossier_ffmpeg()
 logger.info(f"[ffmpeg] dossier retenu : {FFMPEG_DIR}")
 
 
+# ─────────────────────────────────────────────
+# Proxy et cookies : deux leviers pour contourner les blocages des plateformes.
+# Rien n'est ecrit dans le code : tout vient des variables d'environnement
+# Render, pour qu'aucun secret ne se retrouve dans le depot.
+#
+#   PROXY_URL   ex. http://utilisateur:motdepasse@hote:port  (proxy residentiel)
+#   COOKIES_B64 contenu d'un fichier cookies.txt encode en base64
+# ─────────────────────────────────────────────
+PROXY_URL = os.getenv('PROXY_URL', '').strip()
+COOKIES_PATH = '/tmp/pf_cookies.txt'
+
+
+def _preparer_cookies() -> str | None:
+    brut = os.getenv('COOKIES_B64', '').strip()
+    if not brut:
+        return None
+    try:
+        import base64
+        with open(COOKIES_PATH, 'wb') as f:
+            f.write(base64.b64decode(brut))
+        logger.info("[cookies] fichier de cookies ecrit")
+        return COOKIES_PATH
+    except Exception as e:
+        logger.error(f"[cookies] illisible : {e}")
+        return None
+
+
+COOKIES_FILE = _preparer_cookies()
+logger.info(f"[reseau] proxy={'oui' if PROXY_URL else 'non'} cookies={'oui' if COOKIES_FILE else 'non'}")
+
+
+def appliquer_reseau(opts: dict) -> dict:
+    """Ajoute proxy et cookies aux options yt-dlp s'ils sont configures."""
+    if PROXY_URL:
+        opts['proxy'] = PROXY_URL
+    if COOKIES_FILE:
+        opts['cookiefile'] = COOKIES_FILE
+    if FFMPEG_DIR:
+        opts['ffmpeg_location'] = FFMPEG_DIR
+    return opts
+
+
 def download_audio(url: str) -> str | None:
     """Download audio from URL using yt-dlp. Returns path to MP3 file."""
     temp_dir = "/tmp"
@@ -220,7 +262,7 @@ def download_audio(url: str) -> str | None:
     is_youtube = 'youtube.com' in url or 'youtu.be' in url
 
     ydl_opts = {
-        'format': 'bestaudio/best',
+        'format': 'bestaudio/best[acodec!=none]/best',
         'outtmpl': output_template,
         'quiet': True,
         'no_warnings': True,
@@ -236,8 +278,7 @@ def download_audio(url: str) -> str | None:
         'postprocessor_args': ['-t', '30'],  # Only first 30 seconds
     }
 
-    if FFMPEG_DIR:
-        ydl_opts['ffmpeg_location'] = FFMPEG_DIR
+    appliquer_reseau(ydl_opts)
 
     # Platform-specific headers
     if is_facebook or is_instagram:
@@ -389,7 +430,8 @@ async def diag(k: str = "", url: str = "", mode: str = ""):
 
 def _diag_formats(url: str) -> dict:
     """Ce que yt-dlp voit sans rien telecharger."""
-    opts = {'quiet': True, 'no_warnings': True, 'nocheckcertificate': True, 'skip_download': True}
+    opts = appliquer_reseau({'quiet': True, 'no_warnings': True,
+                             'nocheckcertificate': True, 'skip_download': True})
     try:
         with yt_dlp.YoutubeDL(opts) as ydl:
             d = ydl.extract_info(url, download=False)
@@ -403,7 +445,9 @@ def _diag_formats(url: str) -> dict:
             "abr": f.get('abr'), "taille": f.get('filesize') or f.get('filesize_approx'),
             "protocole": f.get('protocol'),
         })
-    return {"titre": (d.get('title') or '')[:120], "duree": d.get('duration'), "formats": fmts}
+    return {"titre": (d.get('title') or '')[:120], "duree": d.get('duration'),
+            "id": d.get('id'), "page": d.get('webpage_url'),
+            "extracteur": d.get('extractor'), "formats": fmts}
 
 
 def _diag_brut(url: str) -> dict:
@@ -415,8 +459,7 @@ def _diag_brut(url: str) -> dict:
         'quiet': True, 'no_warnings': True, 'nocheckcertificate': True,
         'retries': 2,
     }
-    if FFMPEG_DIR:
-        opts['ffmpeg_location'] = FFMPEG_DIR
+    appliquer_reseau(opts)
     res: dict = {}
     try:
         with yt_dlp.YoutubeDL(opts) as ydl:
