@@ -458,12 +458,23 @@ async def root():
 
 @app.get("/health")
 async def health():
+    # curl_cffi permet a yt-dlp d'imiter l'empreinte TLS d'un vrai navigateur.
+    # Sans lui, TikTok repond « status code 0 ». Aucun secret ici, juste un etat.
+    try:
+        import curl_cffi
+        imitation = "presente " + str(getattr(curl_cffi, '__version__', '?'))
+    except Exception as e:
+        imitation = f"absente ({type(e).__name__})"
     return {
         "status": "healthy",
-        "version": "3.0",
+        "version": "3.1",
         "audd_configured": bool(AUDD_API_TOKEN),
         "static_dir": STATIC_DIR,
-        "html_exists": os.path.exists(HTML_FILE)
+        "html_exists": os.path.exists(HTML_FILE),
+        "imitation_navigateur": imitation,
+        "proxy": "oui" if PROXY_EFFECTIF else "non",
+        "proxy_pays": PROXY_COUNTRY or "-",
+        "session": "oui" if COOKIES_FILE else "non",
     }
 
 @app.get("/diag")
