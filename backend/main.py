@@ -230,20 +230,26 @@ COOKIES_PATH = '/tmp/pf_cookies.txt'
 PROXY_COUNTRY = os.getenv('PROXY_COUNTRY', '').strip().lower()
 PROXY_SESSID = os.getenv('PROXY_SESSID', '').strip()
 
+# Pays de sortie essayes successivement pour TikTok.
+TIKTOK_COUNTRIES = [c.strip().lower() for c in
+                    os.getenv('TIKTOK_COUNTRIES', 'it,fr,de,gb,us').split(',') if c.strip()]
 
-def _proxy_cible(url: str) -> str:
+
+def _proxy_cible(url: str, pays: str | None = None, sessid: str | None = None) -> str:
     """Ajoute le ciblage pays/session au nom d'utilisateur du proxy."""
-    if not url or (not PROXY_COUNTRY and not PROXY_SESSID):
+    pays = PROXY_COUNTRY if pays is None else pays
+    sessid = PROXY_SESSID if sessid is None else sessid
+    if not url or (not pays and not sessid):
         return url
     try:
         p = urllib.parse.urlsplit(url)
         if not p.username or '__' in p.username:
             return url
         suffixe = ''
-        if PROXY_COUNTRY:
-            suffixe += f'__cr.{PROXY_COUNTRY}'
-        if PROXY_SESSID:
-            suffixe += (';' if suffixe else '__') + f'sessid.{PROXY_SESSID}'
+        if pays:
+            suffixe += f'__cr.{pays}'
+        if sessid:
+            suffixe += (';' if suffixe else '__') + f'sessid.{sessid}'
         utilisateur = urllib.parse.quote(p.username + suffixe, safe='._;,-')
         secret = urllib.parse.quote(p.password or '', safe='')
         hote = p.hostname + (f':{p.port}' if p.port else '')
@@ -368,19 +374,41 @@ def download_audio(url: str) -> str | None:
         ydl_opts['format'] = 'bestaudio[ext=m4a]/bestaudio/best'
 
     elif is_tiktok:
-        ydl_opts['http_headers'] = {
-            'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1',
-        }
+        # Volontairement aucun User-Agent impose : yt-dlp imite un vrai
+        # navigateur grace a curl_cffi (empreinte TLS + en-tetes coherents).
+        # Ecrire un User-Agent d'iPhone par-dessus une empreinte de Chrome rend
+        # la requete incoherente — exactement ce que TikTok sait detecter.
+        pass
 
     elif is_youtube:
         ydl_opts['http_headers'] = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         }
 
+    # TikTok peut refuser tout un lot d'adresses d'un pays donne tout en
+    # acceptant celles d'un autre. Plutot que de parier sur un seul pays, on
+    # essaie les pays configures l'un apres l'autre, avec une IP fixe par essai.
+    tentatives: list[str | None] = [None]
+    if is_tiktok and PROXY_URL and TIKTOK_COUNTRIES:
+        tentatives = list(TIKTOK_COUNTRIES)
+
     try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            logger.info(f"[yt-dlp] Downloading: {url}")
-            ydl.download([url])
+        derniere = None
+        for numero, pays in enumerate(tentatives, start=1):
+            if pays:
+                ydl_opts['proxy'] = _proxy_cible(PROXY_URL, pays, f'tk{numero}')
+                logger.info(f"[yt-dlp] TikTok essai {numero}/{len(tentatives)} via {pays}")
+            try:
+                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                    logger.info(f"[yt-dlp] Downloading: {url}")
+                    ydl.download([url])
+                derniere = None
+                break
+            except Exception as e:
+                derniere = e
+                logger.error(f"[yt-dlp] essai {numero} echoue : {e}")
+        if derniere is not None:
+            raise derniere
 
         # Find the output file
         mp3_path = f"{temp_dir}/{output_id}.mp3"
