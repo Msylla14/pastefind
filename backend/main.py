@@ -220,6 +220,23 @@ COOKIES_PATH = '/tmp/pf_cookies.txt'
 
 
 def _preparer_cookies() -> str | None:
+    """Deux facons de fournir les cookies, la plus simple d'abord.
+
+    1. Un « Secret File » Render nomme cookies.txt : monte en lecture seule
+       dans /etc/secrets/. On le recopie dans /tmp car yt-dlp a besoin de
+       pouvoir reecrire le fichier.
+    2. La variable COOKIES_B64 : le meme fichier encode en base64.
+    """
+    for source in ('/etc/secrets/cookies.txt', '/etc/secrets/cookies'):
+        if os.path.isfile(source):
+            try:
+                shutil.copyfile(source, COOKIES_PATH)
+                os.chmod(COOKIES_PATH, 0o600)
+                logger.info(f"[cookies] repris depuis {source}")
+                return COOKIES_PATH
+            except Exception as e:
+                logger.error(f"[cookies] copie impossible depuis {source} : {e}")
+
     brut = os.getenv('COOKIES_B64', '').strip()
     if not brut:
         return None
@@ -227,7 +244,8 @@ def _preparer_cookies() -> str | None:
         import base64
         with open(COOKIES_PATH, 'wb') as f:
             f.write(base64.b64decode(brut))
-        logger.info("[cookies] fichier de cookies ecrit")
+        os.chmod(COOKIES_PATH, 0o600)
+        logger.info("[cookies] fichier de cookies ecrit depuis COOKIES_B64")
         return COOKIES_PATH
     except Exception as e:
         logger.error(f"[cookies] illisible : {e}")
@@ -399,6 +417,23 @@ async def diag(k: str = "", url: str = "", mode: str = ""):
     ici = os.path.dirname(os.path.abspath(__file__))
     info["dossier_app"] = ici
     info["which"] = {"ffmpeg": shutil.which("ffmpeg"), "ffprobe": shutil.which("ffprobe")}
+    info["proxy"] = "oui" if PROXY_URL else "non"
+    # Etat des cookies : on ne rend JAMAIS les valeurs, seulement de quoi verifier.
+    if COOKIES_FILE and os.path.isfile(COOKIES_FILE):
+        try:
+            lignes = [l for l in open(COOKIES_FILE, encoding='utf-8', errors='replace')
+                      if l.strip() and not l.startswith('#')]
+            domaines = {}
+            for l in lignes:
+                d = l.split('\t')[0].lstrip('.').lower()
+                for cle in ('tiktok', 'instagram', 'facebook', 'youtube', 'google'):
+                    if cle in d:
+                        domaines[cle] = domaines.get(cle, 0) + 1
+            info["cookies"] = {"lignes": len(lignes), "domaines": domaines}
+        except Exception as e:
+            info["cookies"] = f"illisible: {e}"
+    else:
+        info["cookies"] = "aucun"
     try:
         info["contenu_bin"] = sorted(os.listdir(os.path.join(ici, "bin")))[:20]
     except Exception as e:
