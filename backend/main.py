@@ -12,6 +12,8 @@ import urllib.parse
 import requests
 import re
 import time
+import shutil
+import subprocess
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -170,6 +172,41 @@ LAST_DOWNLOAD_ERROR: dict[str, str] = {}
 # Clé du point de diagnostic temporaire /diag (à retirer une fois les liens réparés).
 DIAG_KEY = "pf-diag-2026"
 
+
+def trouver_dossier_ffmpeg() -> str | None:
+    """Retourne le dossier contenant a la fois ffmpeg et ffprobe, ou None.
+
+    yt-dlp cherche ffmpeg/ffprobe dans le PATH. Sur Render le PATH n'est pas
+    fiable : si ffprobe est introuvable, le post-traitement echoue avec
+    « unable to obtain file audio codec with ffprobe » et le telechargement
+    est perdu alors que la video a bien ete recuperee. On lui donne donc le
+    chemin explicitement.
+    """
+    ici = os.path.dirname(os.path.abspath(__file__))
+    candidats = [
+        os.path.join(ici, 'bin'),
+        '/opt/render/project/src/backend/bin',
+        '/opt/render/project/src/bin',
+        '/var/www/pastefind-backend/bin',
+        '/usr/local/bin',
+        '/usr/bin',
+    ]
+    for dossier in candidats:
+        f = os.path.join(dossier, 'ffmpeg')
+        p = os.path.join(dossier, 'ffprobe')
+        if os.path.isfile(f) and os.path.isfile(p):
+            return dossier
+    f = shutil.which('ffmpeg')
+    p = shutil.which('ffprobe')
+    if f and p:
+        return os.path.dirname(f)
+    return None
+
+
+FFMPEG_DIR = trouver_dossier_ffmpeg()
+logger.info(f"[ffmpeg] dossier retenu : {FFMPEG_DIR}")
+
+
 def download_audio(url: str) -> str | None:
     """Download audio from URL using yt-dlp. Returns path to MP3 file."""
     temp_dir = "/tmp"
@@ -198,6 +235,9 @@ def download_audio(url: str) -> str | None:
         }],
         'postprocessor_args': ['-t', '30'],  # Only first 30 seconds
     }
+
+    if FFMPEG_DIR:
+        ydl_opts['ffmpeg_location'] = FFMPEG_DIR
 
     # Platform-specific headers
     if is_facebook or is_instagram:
@@ -262,11 +302,13 @@ def truncate_audio_if_needed(file_path: str, max_mb: int = 8) -> str:
 
     # Try to use ffmpeg
     ffmpeg_paths = [
+        os.path.join(FFMPEG_DIR, 'ffmpeg') if FFMPEG_DIR else None,
         '/var/www/pastefind-backend/bin/ffmpeg',
         '/usr/bin/ffmpeg',
         '/usr/local/bin/ffmpeg',
         'ffmpeg'
     ]
+    ffmpeg_paths = [p for p in ffmpeg_paths if p]
 
     for ffmpeg in ffmpeg_paths:
         try:
@@ -312,7 +354,22 @@ async def diag(k: str = "", url: str = ""):
     if k != DIAG_KEY:
         return JSONResponse({"error": "cle invalide"}, status_code=403)
     import yt_dlp.version
-    info = {"ytdlp": yt_dlp.version.__version__}
+    info = {"ytdlp": yt_dlp.version.__version__, "ffmpeg_dir": FFMPEG_DIR}
+    ici = os.path.dirname(os.path.abspath(__file__))
+    info["dossier_app"] = ici
+    info["which"] = {"ffmpeg": shutil.which("ffmpeg"), "ffprobe": shutil.which("ffprobe")}
+    try:
+        info["contenu_bin"] = sorted(os.listdir(os.path.join(ici, "bin")))[:20]
+    except Exception as e:
+        info["contenu_bin"] = f"illisible: {e}"
+    if FFMPEG_DIR:
+        for outil in ("ffmpeg", "ffprobe"):
+            try:
+                r = subprocess.run([os.path.join(FFMPEG_DIR, outil), "-version"],
+                                   capture_output=True, text=True, timeout=15)
+                info[outil] = (r.stdout or r.stderr).splitlines()[0][:120]
+            except Exception as e:
+                info[outil] = f"echec: {type(e).__name__}: {e}"
     if url:
         chemin = await asyncio.to_thread(download_audio, url)
         info["telechargement_ok"] = bool(chemin)
