@@ -228,7 +228,7 @@ def _preparer_cookies() -> str | None:
     2. La variable COOKIES_B64 : le meme fichier encode en base64.
     """
     import glob
-    sources = sorted(glob.glob('/etc/secrets/cookies*'))
+    sources = sorted(glob.glob('/etc/secrets/*cookies*') + glob.glob('/etc/secrets/*.txt'))
     if sources:
         try:
             lignes = 0
