@@ -332,8 +332,36 @@ def appliquer_reseau(opts: dict) -> dict:
     return opts
 
 
+def derouler_lien_court(url: str) -> str:
+    """Transforme un lien court en son adresse complete.
+
+    Le bouton « Partager » de TikTok donne vm.tiktok.com/XXXX/, et c'est donc
+    la forme que collent les utilisateurs. Or l'extracteur du lien court ne
+    passe pas par l'imitation de navigateur et se fait refuser. On deroule donc
+    la redirection nous-memes, en passant par le proxy, avant de confier
+    l'adresse complete a yt-dlp.
+    """
+    if not re.search(r'(vm|vt)\.tiktok\.com|fb\.watch|(www\.)?tiktok\.com/t/', url):
+        return url
+    proxies = {'http': PROXY_EFFECTIF, 'https': PROXY_EFFECTIF} if PROXY_EFFECTIF else None
+    entetes = {'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) '
+                             'AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 '
+                             'Mobile/15E148 Safari/604.1'}
+    try:
+        r = requests.get(url, headers=entetes, proxies=proxies,
+                         allow_redirects=True, timeout=20)
+        complet = r.url.split('?')[0]
+        if complet and complet != url:
+            logger.info(f"[lien court] deroule vers {complet}")
+            return complet
+    except Exception as e:
+        logger.warning(f"[lien court] deroulage impossible : {e}")
+    return url
+
+
 def download_audio(url: str) -> str | None:
     """Download audio from URL using yt-dlp. Returns path to MP3 file."""
+    url = derouler_lien_court(url)
     temp_dir = "/tmp"
     output_id = str(uuid.uuid4())
     output_template = f"{temp_dir}/{output_id}.%(ext)s"
