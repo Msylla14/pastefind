@@ -221,6 +221,38 @@ logger.info(f"[ffmpeg] dossier retenu : {FFMPEG_DIR}")
 PROXY_URL = os.getenv('PROXY_URL', '').strip()
 COOKIES_PATH = '/tmp/pf_cookies.txt'
 
+# Ciblage du proxy (DataImpulse) : le pays et la persistance de l'IP se
+# demandent en suffixant le NOM D'UTILISATEUR, pas l'adresse.
+#   login__cr.it            -> sortir par une IP italienne
+#   login__cr.it;sessid.42  -> garder la meme IP pendant 30 minutes
+# Utile parce qu'une session TikTok creee depuis l'Italie est refusee si la
+# requete arrive depuis une IP d'un autre pays, ou si l'IP change a chaque appel.
+PROXY_COUNTRY = os.getenv('PROXY_COUNTRY', '').strip().lower()
+PROXY_SESSID = os.getenv('PROXY_SESSID', '').strip()
+
+
+def _proxy_cible(url: str) -> str:
+    """Ajoute le ciblage pays/session au nom d'utilisateur du proxy."""
+    if not url or (not PROXY_COUNTRY and not PROXY_SESSID):
+        return url
+    try:
+        p = urllib.parse.urlsplit(url)
+        if not p.username or '__' in p.username:
+            return url
+        suffixe = ''
+        if PROXY_COUNTRY:
+            suffixe += f'__cr.{PROXY_COUNTRY}'
+        if PROXY_SESSID:
+            suffixe += (';' if suffixe else '__') + f'sessid.{PROXY_SESSID}'
+        utilisateur = urllib.parse.quote(p.username + suffixe, safe='._;,-')
+        secret = urllib.parse.quote(p.password or '', safe='')
+        hote = p.hostname + (f':{p.port}' if p.port else '')
+        return urllib.parse.urlunsplit(
+            (p.scheme, f'{utilisateur}:{secret}@{hote}', p.path, p.query, p.fragment))
+    except Exception as e:
+        logger.error(f"[proxy] ciblage impossible : {e}")
+        return url
+
 
 def _preparer_cookies() -> str | None:
     """Deux facons de fournir les cookies, la plus simple d'abord.
@@ -276,13 +308,17 @@ def _preparer_cookies() -> str | None:
 
 
 COOKIES_FILE = _preparer_cookies()
-logger.info(f"[reseau] proxy={'oui' if PROXY_URL else 'non'} cookies={'oui' if COOKIES_FILE else 'non'}")
+PROXY_EFFECTIF = _proxy_cible(PROXY_URL)
+logger.info(
+    f"[reseau] proxy={'oui' if PROXY_EFFECTIF else 'non'}"
+    f" pays={PROXY_COUNTRY or '-'} sessid={PROXY_SESSID or '-'}"
+    f" cookies={'oui' if COOKIES_FILE else 'non'}")
 
 
 def appliquer_reseau(opts: dict) -> dict:
     """Ajoute proxy et cookies aux options yt-dlp s'ils sont configures."""
-    if PROXY_URL:
-        opts['proxy'] = PROXY_URL
+    if PROXY_EFFECTIF:
+        opts['proxy'] = PROXY_EFFECTIF
     if COOKIES_FILE:
         opts['cookiefile'] = COOKIES_FILE
     if FFMPEG_DIR:
@@ -440,7 +476,9 @@ async def diag(k: str = "", url: str = "", mode: str = ""):
     ici = os.path.dirname(os.path.abspath(__file__))
     info["dossier_app"] = ici
     info["which"] = {"ffmpeg": shutil.which("ffmpeg"), "ffprobe": shutil.which("ffprobe")}
-    info["proxy"] = "oui" if PROXY_URL else "non"
+    info["proxy"] = "oui" if PROXY_EFFECTIF else "non"
+    info["proxy_pays"] = PROXY_COUNTRY or "-"
+    info["proxy_sessid"] = PROXY_SESSID or "-"
     # Etat des cookies : on ne rend JAMAIS les valeurs, seulement de quoi verifier.
     if COOKIES_FILE and os.path.isfile(COOKIES_FILE):
         try:
