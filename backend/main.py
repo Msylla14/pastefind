@@ -169,8 +169,11 @@ def analyze_with_audd(file_path: str) -> dict:
 # Dernière erreur de téléchargement, conservée pour les journaux du serveur.
 LAST_DOWNLOAD_ERROR: dict[str, str] = {}
 
-# Clé du point de diagnostic temporaire /diag (à retirer une fois les liens réparés).
-DIAG_KEY = "pf-diag-2026"
+# Clé du point de diagnostic temporaire /diag.
+# Elle vient UNIQUEMENT de l'environnement Render : le dépôt est public, une clé
+# écrite en dur ici laisserait n'importe qui déclencher des téléchargements et
+# consommer le forfait du proxy. Sans variable DIAG_KEY, /diag n'existe pas.
+DIAG_KEY = os.getenv('DIAG_KEY', '').strip()
 
 
 def trouver_dossier_ffmpeg() -> str | None:
@@ -421,8 +424,8 @@ async def health():
 @app.get("/diag")
 async def diag(k: str = "", url: str = "", mode: str = ""):
     """Diagnostic TEMPORAIRE. Protege par une cle, a retirer une fois les liens repares."""
-    if k != DIAG_KEY:
-        return JSONResponse({"error": "cle invalide"}, status_code=403)
+    if not DIAG_KEY or k != DIAG_KEY:
+        return JSONResponse({"detail": "Not Found"}, status_code=404)
     import yt_dlp.version
     info = {"ytdlp": yt_dlp.version.__version__, "ffmpeg_dir": FFMPEG_DIR}
     ici = os.path.dirname(os.path.abspath(__file__))
