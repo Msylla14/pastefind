@@ -167,6 +167,9 @@ def analyze_with_audd(file_path: str) -> dict:
 # Dernière erreur de téléchargement, conservée pour les journaux du serveur.
 LAST_DOWNLOAD_ERROR: dict[str, str] = {}
 
+# Clé du point de diagnostic temporaire /diag (à retirer une fois les liens réparés).
+DIAG_KEY = "pf-diag-2026"
+
 def download_audio(url: str) -> str | None:
     """Download audio from URL using yt-dlp. Returns path to MP3 file."""
     temp_dir = "/tmp"
@@ -302,6 +305,25 @@ async def health():
         "static_dir": STATIC_DIR,
         "html_exists": os.path.exists(HTML_FILE)
     }
+
+@app.get("/diag")
+async def diag(k: str = "", url: str = ""):
+    """Diagnostic TEMPORAIRE. Protege par une cle, a retirer une fois les liens repares."""
+    if k != DIAG_KEY:
+        return JSONResponse({"error": "cle invalide"}, status_code=403)
+    import yt_dlp.version
+    info = {"ytdlp": yt_dlp.version.__version__}
+    if url:
+        chemin = await asyncio.to_thread(download_audio, url)
+        info["telechargement_ok"] = bool(chemin)
+        info["erreur_yt_dlp"] = LAST_DOWNLOAD_ERROR.get("last", "")
+        if chemin:
+            info["taille"] = os.path.getsize(chemin)
+            try:
+                os.remove(chemin)
+            except Exception:
+                pass
+    return info
 
 @app.get("/logo.png")
 async def get_logo():
