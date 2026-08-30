@@ -227,15 +227,26 @@ def _preparer_cookies() -> str | None:
        pouvoir reecrire le fichier.
     2. La variable COOKIES_B64 : le meme fichier encode en base64.
     """
-    for source in ('/etc/secrets/cookies.txt', '/etc/secrets/cookies'):
-        if os.path.isfile(source):
-            try:
-                shutil.copyfile(source, COOKIES_PATH)
-                os.chmod(COOKIES_PATH, 0o600)
-                logger.info(f"[cookies] repris depuis {source}")
+    import glob
+    sources = sorted(glob.glob('/etc/secrets/cookies*'))
+    if sources:
+        try:
+            lignes = 0
+            with open(COOKIES_PATH, 'w', encoding='utf-8') as sortie:
+                sortie.write('# Netscape HTTP Cookie File\n')
+                for source in sources:
+                    with open(source, encoding='utf-8', errors='replace') as f:
+                        for ligne in f:
+                            if not ligne.strip() or ligne.lstrip().startswith('#'):
+                                continue
+                            sortie.write(ligne if ligne.endswith('\n') else ligne + '\n')
+                            lignes += 1
+            os.chmod(COOKIES_PATH, 0o600)
+            logger.info(f"[cookies] {lignes} lignes reprises depuis {len(sources)} fichier(s) secret(s)")
+            if lignes:
                 return COOKIES_PATH
-            except Exception as e:
-                logger.error(f"[cookies] copie impossible depuis {source} : {e}")
+        except Exception as e:
+            logger.error(f"[cookies] fusion impossible : {e}")
 
     brut = os.getenv('COOKIES_B64', '').strip()
     if not brut:
