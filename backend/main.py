@@ -349,7 +349,7 @@ async def health():
     }
 
 @app.get("/diag")
-async def diag(k: str = "", url: str = ""):
+async def diag(k: str = "", url: str = "", mode: str = ""):
     """Diagnostic TEMPORAIRE. Protege par une cle, a retirer une fois les liens repares."""
     if k != DIAG_KEY:
         return JSONResponse({"error": "cle invalide"}, status_code=403)
@@ -370,7 +370,11 @@ async def diag(k: str = "", url: str = ""):
                 info[outil] = (r.stdout or r.stderr).splitlines()[0][:120]
             except Exception as e:
                 info[outil] = f"echec: {type(e).__name__}: {e}"
-    if url:
+    if url and mode == "formats":
+        info.update(await asyncio.to_thread(_diag_formats, url))
+    elif url and mode == "brut":
+        info.update(await asyncio.to_thread(_diag_brut, url))
+    elif url:
         chemin = await asyncio.to_thread(download_audio, url)
         info["telechargement_ok"] = bool(chemin)
         info["erreur_yt_dlp"] = LAST_DOWNLOAD_ERROR.get("last", "")
@@ -381,6 +385,69 @@ async def diag(k: str = "", url: str = ""):
             except Exception:
                 pass
     return info
+
+
+def _diag_formats(url: str) -> dict:
+    """Ce que yt-dlp voit sans rien telecharger."""
+    opts = {'quiet': True, 'no_warnings': True, 'nocheckcertificate': True, 'skip_download': True}
+    try:
+        with yt_dlp.YoutubeDL(opts) as ydl:
+            d = ydl.extract_info(url, download=False)
+    except Exception as e:
+        return {"formats_erreur": f"{type(e).__name__}: {str(e)[:300]}"}
+    fmts = []
+    for f in (d.get('formats') or [])[:40]:
+        fmts.append({
+            "id": f.get('format_id'), "ext": f.get('ext'),
+            "acodec": f.get('acodec'), "vcodec": f.get('vcodec'),
+            "abr": f.get('abr'), "taille": f.get('filesize') or f.get('filesize_approx'),
+            "protocole": f.get('protocol'),
+        })
+    return {"titre": (d.get('title') or '')[:120], "duree": d.get('duration'), "formats": fmts}
+
+
+def _diag_brut(url: str) -> dict:
+    """Telecharge SANS post-traitement, puis demande a ffprobe ce qu'il y a dedans."""
+    ident = str(uuid.uuid4())
+    opts = {
+        'format': 'bestaudio/best',
+        'outtmpl': f'/tmp/{ident}.%(ext)s',
+        'quiet': True, 'no_warnings': True, 'nocheckcertificate': True,
+        'retries': 2,
+    }
+    if FFMPEG_DIR:
+        opts['ffmpeg_location'] = FFMPEG_DIR
+    res: dict = {}
+    try:
+        with yt_dlp.YoutubeDL(opts) as ydl:
+            ydl.download([url])
+    except Exception as e:
+        res["brut_erreur"] = f"{type(e).__name__}: {str(e)[:300]}"
+    fichiers = [f for f in os.listdir('/tmp') if f.startswith(ident)]
+    res["fichiers"] = fichiers
+    for f in fichiers:
+        p = f'/tmp/{f}'
+        res["taille"] = os.path.getsize(p)
+        try:
+            with open(p, 'rb') as fh:
+                res["debut_du_fichier"] = repr(fh.read(60))
+        except Exception:
+            pass
+        if FFMPEG_DIR:
+            try:
+                r = subprocess.run(
+                    [os.path.join(FFMPEG_DIR, 'ffprobe'), '-v', 'error', '-show_streams',
+                     '-of', 'default=noprint_wrappers=1:nokey=0', p],
+                    capture_output=True, text=True, timeout=30)
+                res["ffprobe_sortie"] = (r.stdout or '')[:600]
+                res["ffprobe_erreur"] = (r.stderr or '')[:300]
+            except Exception as e:
+                res["ffprobe_erreur"] = f"{type(e).__name__}: {e}"
+        try:
+            os.remove(p)
+        except Exception:
+            pass
+    return res
 
 @app.get("/logo.png")
 async def get_logo():
