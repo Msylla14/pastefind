@@ -5,3 +5,4 @@ yt-dlp>=2026.8.19
 python-multipart
 jinja2
 requests
+curl_cffi>=0.7
