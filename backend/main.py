@@ -231,7 +231,9 @@ def _preparer_cookies() -> str | None:
     2. La variable COOKIES_B64 : le meme fichier encode en base64.
     """
     import glob
-    sources = sorted(glob.glob('/etc/secrets/*cookies*') + glob.glob('/etc/secrets/*.txt'))
+    # set() : un meme fichier peut correspondre aux deux motifs, sans quoi les
+    # cookies seraient ecrits en double.
+    sources = sorted(set(glob.glob('/etc/secrets/*cookies*')) | set(glob.glob('/etc/secrets/*.txt')))
     if sources:
         try:
             lignes = 0
@@ -240,7 +242,14 @@ def _preparer_cookies() -> str | None:
                 for source in sources:
                     with open(source, encoding='utf-8', errors='replace') as f:
                         for ligne in f:
-                            if not ligne.strip() or ligne.lstrip().startswith('#'):
+                            nue = ligne.strip()
+                            if not nue:
+                                continue
+                            # ATTENTION : les lignes « #HttpOnly_… » sont de VRAIS
+                            # cookies, pas des commentaires. Ce sont meme les plus
+                            # importants (sessionid de TikTok, par exemple). Les
+                            # jeter revient a envoyer un fichier deconnecte.
+                            if nue.startswith('#') and not nue.startswith('#HttpOnly_'):
                                 continue
                             sortie.write(ligne if ligne.endswith('\n') else ligne + '\n')
                             lignes += 1
