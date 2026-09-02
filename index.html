@@ -56,6 +56,13 @@
   .badge{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;
     text-transform:uppercase;color:var(--ink-3);border:1px solid var(--line);padding:4px 9px;border-radius:99px}
 
+  .badge.lang{position:relative;display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+  .badge.lang svg{width:9px;height:9px;opacity:.65;flex:none}
+  .badge.lang select{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;
+    -webkit-appearance:none;appearance:none;border:none;background:none;font-size:16px}
+  .badge.lang option{color:#111;background:#fff}
+  .badge.lang:hover{color:var(--ink-2);border-color:var(--line)}
+
   .pitch{padding:0 2px 26px}
   .pitch h1{font-family:'Syne',sans-serif;font-weight:700;font-size:clamp(30px,8.4vw,40px);
     line-height:1.06;letter-spacing:-.03em;margin:0 0 12px;text-wrap:balance}
@@ -342,27 +349,34 @@
       <img class="glyph" src="/icon-192.png" alt="" width="32" height="32" decoding="async">
       <div class="word">Paste<em>Find</em></div>
     </div>
-    <div class="badge">pastefind.com</div>
+    <label class="badge lang">
+        <span id="langcode">FR</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+        <select id="lang" aria-label="Langue / Language">
+          <option value="fr">Français</option>
+          <option value="en">English</option>
+        </select>
+      </label>
   </header>
 
   <div class="pitch">
-    <h1>Cette musique,<br>tu l'as <span>trouvée</span>.</h1>
-    <p>Colle un lien, dépose un fichier ou laisse le micro écouter. On te dit quel morceau c'est, et où l'écouter.</p>
+    <h1 data-th="titre"></h1>
+    <p data-t="accroche"></p>
   </div>
 
   <div class="console">
     <div class="modes" role="tablist" aria-label="Méthode d'identification">
       <button class="mode" role="tab" id="m-link" aria-selected="true" aria-controls="s-link">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>
-        Lien
+        <span data-t="ongletLien"></span>
       </button>
       <button class="mode" role="tab" id="m-file" aria-selected="false" aria-controls="s-file">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v5h5"/><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9l5 5v11a2 2 0 0 1-2 2z"/></svg>
-        Fichier
+        <span data-t="ongletFichier"></span>
       </button>
       <button class="mode" role="tab" id="m-mic" aria-selected="false" aria-controls="s-mic">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v4"/></svg>
-        Micro
+        <span data-t="ongletMicro"></span>
       </button>
     </div>
 
@@ -371,40 +385,40 @@
       <div id="s-link" role="tabpanel" aria-labelledby="m-link">
         <label class="field">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>
-          <input id="url" type="text" inputmode="url" placeholder="Colle ton lien TikTok, Facebook, Instagram…" autocomplete="off" spellcheck="false">
+          <input id="url" type="text" inputmode="url" data-tp="champLien" placeholder="" autocomplete="off" spellcheck="false">
         </label>
-        <p class="hint">Fonctionne avec <b>TikTok</b>, <b>Facebook</b> et <b>Instagram</b>. Pour YouTube, télécharge la vidéo et passe par l'onglet Fichier.</p>
+        <p class="hint" data-th="aideLien"></p>
       </div>
 
       <div id="s-file" role="tabpanel" aria-labelledby="m-file" hidden>
         <div class="drop" id="drop">
           <input type="file" id="picker" accept="audio/*,video/*,.mp3,.mp4,.wav,.m4a,.webm,.ogg,.aac,.flac" aria-label="Choisir un fichier">
           <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
-          <div class="t">Dépose ton fichier ici</div>
-          <div class="s">ou touche pour parcourir · MP3, MP4, WAV, M4A</div>
+          <div class="t" data-t="deposeTitre"></div>
+          <div class="s" data-t="deposeSous"></div>
           <div class="file" id="fname" hidden></div>
         </div>
-        <p class="hint">Jusqu'à <b>50 Mo</b>. Seules les 30 premières secondes sont analysées.</p>
+        <p class="hint" data-th="aideFichier"></p>
       </div>
 
       <div id="s-mic" role="tabpanel" aria-labelledby="m-mic" hidden>
         <div class="mic-stage">
-          <button class="mic-btn" id="micbtn" aria-label="Écouter autour de moi">
+          <button class="mic-btn" id="micbtn" data-ta="micAria" aria-label="">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v4"/></svg>
           </button>
-          <p class="s" id="micsub">Touche pour écouter ce qui joue autour de toi.<br>Dix secondes suffisent.</p>
+          <p class="s" id="micsub" data-th="micSous"></p>
         </div>
       </div>
 
       <button class="go" id="go">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/></svg>
-        <span id="golabel">Identifier</span>
+        <span id="golabel"></span>
       </button>
 
       <div class="scan" id="scan" aria-live="polite">
         <div class="meter" id="meter" aria-hidden="true"></div>
-        <div class="scan-txt" id="scantxt">Écoute en cours</div>
-        <div class="scan-sub" id="scansub">Extraction de l'empreinte sonore…</div>
+        <div class="scan-txt" id="scantxt"></div>
+        <div class="scan-sub" id="scansub"></div>
       </div>
 
     </div>
@@ -415,7 +429,7 @@
       <div class="card-top">
         <div class="sleeve" id="sleeve"><div class="disc"></div><img id="cover" alt=""></div>
         <div class="meta">
-          <div class="lbl">Morceau identifié</div>
+          <div class="lbl" data-t="morceauIdentifie"></div>
           <div class="title" id="rtitle" translate="no">—</div>
           <div class="artist" id="rartist" translate="no">—</div>
         </div>
@@ -437,11 +451,11 @@
       <div class="tools">
         <button class="tool" id="copy">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
-          <span id="copytxt">Copier le titre</span>
+          <span id="copytxt"></span>
         </button>
         <button class="tool" id="share">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"/><path d="m8 8 4-4 4 4"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
-          <span id="sharetxt">Partager</span>
+          <span id="sharetxt"></span>
         </button>
       </div>
     </div>
@@ -449,24 +463,24 @@
 
   <div class="oops" id="oops">
     <div class="oops-in">
-      <div class="h" id="oopsh">Musique non reconnue</div>
-      <div class="b" id="oopsb">Essaie avec un passage où la musique est plus forte.</div>
+      <div class="h" id="oopsh"></div>
+      <div class="b" id="oopsb"></div>
     </div>
   </div>
 
   <section class="hist">
     <div class="hist-hd">
-      <h2>Tes trouvailles</h2>
-      <button class="clear" id="clear" hidden>Tout effacer</button>
+      <h2 data-t="tesTrouvailles"></h2>
+      <button class="clear" id="clear" data-t="toutEffacer" hidden></button>
     </div>
     <div id="rows"></div>
-    <div class="empty" id="empty">Rien pour l'instant. Ce que tu identifies s'enregistre ici, sur ton appareil uniquement.</div>
+    <div class="empty" id="empty" data-t="histoireVide"></div>
   </section>
 
   <footer class="foot">
     <div class="trust">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
-      <p>Ton fichier est supprimé de nos serveurs dès l'analyse terminée. Aucun compte, aucune publicité, aucun traceur. <a href="/privacy/">Politique de confidentialité</a>.</p>
+      <p data-th="confiance"></p>
     </div>
     <div class="fine">PasteFind · contact@pastefind.com</div>
   </footer>
@@ -482,6 +496,158 @@
   var MAX_BYTES = 50 * 1024 * 1024;
 
   function $(id) { return document.getElementById(id); }
+
+  /* ══════════════════════════════════════════════════════════
+     LANGUES
+     Pour ajouter une langue : copier le bloc « en », traduire les
+     valeurs, et ajouter la ligne <option> dans l'en-tête.
+     « rtl: true » retourne la page pour l'arabe.
+     ══════════════════════════════════════════════════════════ */
+  var LANGUES = {
+
+    fr: {
+      nom: 'Français',
+      titrePage: 'PasteFind — Trouve la musique d\'une vidéo',
+      descriptionPage: 'Colle un lien TikTok, Facebook ou Instagram, dépose un fichier audio ou laisse le micro écouter : PasteFind identifie le morceau et te dit où l\'écouter.',
+      titre: 'Cette musique,<br>tu l\'as <span>trouvée</span>.',
+      accroche: 'Colle un lien, dépose un fichier ou laisse le micro écouter. On te dit quel morceau c\'est, et où l\'écouter.',
+      ongletLien: 'Lien', ongletFichier: 'Fichier', ongletMicro: 'Micro',
+      champLien: 'Colle ton lien TikTok, Facebook, Instagram…',
+      aideLien: 'Fonctionne avec <b>TikTok</b>, <b>Facebook</b> et <b>Instagram</b>. Pour YouTube, télécharge la vidéo et passe par l\'onglet Fichier.',
+      deposeTitre: 'Dépose ton fichier ici',
+      deposeSous: 'ou touche pour parcourir · MP3, MP4, WAV, M4A',
+      aideFichier: 'Jusqu\'à <b>50 Mo</b>. Seules les 30 premières secondes sont analysées.',
+      micAria: 'Écouter autour de moi',
+      micSous: 'Touche pour écouter ce qui joue autour de toi.<br>Dix secondes suffisent.',
+      micEcoute: 'À l\'écoute… ',
+      identifier: 'Identifier', ecouter: 'Écouter maintenant',
+      scanEcoute: 'Écoute en cours', scanAnalyse: 'Analyse de l\'enregistrement',
+      scanRecup: 'Récupération de la vidéo…', scanEmpreinte: 'Extraction de l\'empreinte sonore…',
+      scanCatalogue: 'Comparaison avec le catalogue…',
+      morceauIdentifie: 'Morceau identifié',
+      copierTitre: 'Copier le titre', copie: 'Copié',
+      partager: 'Partager', copiePartage: 'Copié pour partage',
+      partageSuffixe: ' · trouvé avec PasteFind',
+      tesTrouvailles: 'Tes trouvailles', toutEffacer: 'Tout effacer',
+      histoireVide: 'Rien pour l\'instant. Ce que tu identifies s\'enregistre ici, sur ton appareil uniquement.',
+      confiance: 'Ton fichier est supprimé de nos serveurs dès l\'analyse terminée. Aucun compte, aucune publicité, aucun traceur. <a href="/privacy/">Politique de confidentialité</a>.',
+      titreInconnu: 'Titre inconnu', artisteInconnu: 'Artiste inconnu',
+      unite: 'Mo',
+      instant: 'à l\'instant', min: ' min', heure: ' h', jour: ' j',
+      erreurs: {
+        tropGros:      ['Fichier trop volumineux', 'Ce fichier dépasse 50 Mo. Découpe un extrait de trente secondes et réessaie.'],
+        microAbsent:   ['Micro indisponible', 'Ton navigateur ne permet pas l\'accès au microphone. Utilise l\'onglet Fichier.'],
+        microMuet:     ['Micro indisponible', 'Ton navigateur ne sait pas enregistrer l\'audio. Utilise l\'onglet Fichier.'],
+        rienEnregistre:['Rien n\'a été enregistré', 'Réessaie en approchant le téléphone de la source sonore.'],
+        microRefuse:   ['Accès au micro refusé', 'Autorise le microphone dans les réglages de ton navigateur, ou utilise l\'onglet Fichier.'],
+        lienInvalide:  ['Lien invalide', 'Copie le lien complet depuis l\'application, il doit ressembler à https://…'],
+        youtube:       ['YouTube n\'est pas accepté', 'YouTube bloque les téléchargements depuis un serveur. Télécharge la vidéo sur ton appareil et passe par l\'onglet Fichier.'],
+        illisible:     ['Réponse illisible', 'Le serveur a répondu quelque chose d\'inattendu. Réessaie dans un instant.'],
+        delai:         ['Délai dépassé', 'Le serveur met trop de temps. Télécharge la vidéo sur ton appareil et passe par l\'onglet Fichier.'],
+        connexion:     ['Connexion impossible', 'Vérifie ta connexion internet et réessaie.'],
+        nonReconnue:   ['Musique non reconnue', 'Essaie avec un passage où la musique est plus forte.'],
+        videoBloquee:  ['Vidéo inaccessible', 'Le lien n\'a pas pu être ouvert. Vérifie qu\'il est public, ou passe par l\'onglet Fichier.'],
+        formatRefuse:  ['Format non supporté', 'Ce fichier n\'est pas un audio ou une vidéo reconnue.'],
+        analyse:       ['Analyse impossible', '']
+      }
+    },
+
+    en: {
+      nom: 'English',
+      titrePage: 'PasteFind — Find the song in any video',
+      descriptionPage: 'Paste a TikTok, Facebook or Instagram link, drop an audio file or let the mic listen: PasteFind identifies the track and tells you where to hear it.',
+      titre: 'That song?<br>You just <span>found</span> it.',
+      accroche: 'Paste a link, drop a file, or let the mic listen. We tell you what the track is, and where to hear it.',
+      ongletLien: 'Link', ongletFichier: 'File', ongletMicro: 'Mic',
+      champLien: 'Paste your TikTok, Facebook or Instagram link…',
+      aideLien: 'Works with <b>TikTok</b>, <b>Facebook</b> and <b>Instagram</b>. For YouTube, download the video and use the File tab.',
+      deposeTitre: 'Drop your file here',
+      deposeSous: 'or tap to browse · MP3, MP4, WAV, M4A',
+      aideFichier: 'Up to <b>50 MB</b>. Only the first 30 seconds are analyzed.',
+      micAria: 'Listen around me',
+      micSous: 'Tap to listen to what\'s playing around you.<br>Ten seconds is enough.',
+      micEcoute: 'Listening… ',
+      identifier: 'Identify', ecouter: 'Listen now',
+      scanEcoute: 'Listening', scanAnalyse: 'Analyzing the recording',
+      scanRecup: 'Fetching the video…', scanEmpreinte: 'Extracting the audio fingerprint…',
+      scanCatalogue: 'Matching against the catalog…',
+      morceauIdentifie: 'Track identified',
+      copierTitre: 'Copy title', copie: 'Copied',
+      partager: 'Share', copiePartage: 'Copied to share',
+      partageSuffixe: ' · found with PasteFind',
+      tesTrouvailles: 'Your finds', toutEffacer: 'Clear all',
+      histoireVide: 'Nothing yet. Whatever you identify is saved here, on your device only.',
+      confiance: 'Your file is deleted from our servers as soon as the analysis is done. No account, no ads, no trackers. <a href="/privacy/">Privacy policy</a>.',
+      titreInconnu: 'Unknown title', artisteInconnu: 'Unknown artist',
+      unite: 'MB',
+      instant: 'just now', min: ' min', heure: ' h', jour: ' d',
+      erreurs: {
+        tropGros:      ['File too large', 'This file is over 50 MB. Cut a thirty-second clip and try again.'],
+        microAbsent:   ['Microphone unavailable', 'Your browser does not allow microphone access. Use the File tab.'],
+        microMuet:     ['Microphone unavailable', 'Your browser cannot record audio. Use the File tab.'],
+        rienEnregistre:['Nothing was recorded', 'Try again, closer to the sound source.'],
+        microRefuse:   ['Microphone access denied', 'Allow the microphone in your browser settings, or use the File tab.'],
+        lienInvalide:  ['Invalid link', 'Copy the full link from the app — it should look like https://…'],
+        youtube:       ['YouTube is not supported', 'YouTube blocks downloads from a server. Download the video to your device and use the File tab.'],
+        illisible:     ['Unreadable response', 'The server replied with something unexpected. Try again in a moment.'],
+        delai:         ['Timed out', 'The server is taking too long. Download the video to your device and use the File tab.'],
+        connexion:     ['Cannot connect', 'Check your internet connection and try again.'],
+        nonReconnue:   ['Song not recognized', 'Try a passage where the music is louder.'],
+        videoBloquee:  ['Video unavailable', 'The link could not be opened. Check that it is public, or use the File tab.'],
+        formatRefuse:  ['Unsupported format', 'This file is not a recognized audio or video file.'],
+        analyse:       ['Analysis failed', '']
+      }
+    }
+
+  };
+
+  var LANGUE = 'fr';
+  var L = LANGUES.fr;
+
+  function t(cle) { return (L[cle] !== undefined ? L[cle] : LANGUES.fr[cle]) || ''; }
+  function e(cle) { return (L.erreurs && L.erreurs[cle]) || LANGUES.fr.erreurs[cle]; }
+
+  function langueChoisie() {
+    var enregistree;
+    try { enregistree = localStorage.getItem('pf.lang'); } catch (err) {}
+    if (enregistree && LANGUES[enregistree]) return enregistree;
+    var liste = navigator.languages || [navigator.language || 'fr'];
+    for (var i = 0; i < liste.length; i++) {
+      var code = String(liste[i]).toLowerCase().split('-')[0];
+      if (LANGUES[code]) return code;
+    }
+    return 'fr';
+  }
+
+  function appliquerLangue(code) {
+    LANGUE = LANGUES[code] ? code : 'fr';
+    L = LANGUES[LANGUE];
+
+    document.documentElement.lang = LANGUE;
+    document.documentElement.dir = L.rtl ? 'rtl' : 'ltr';
+    document.title = t('titrePage');
+
+    var d = document.querySelector('meta[name="description"]');
+    if (d && L.descriptionPage) d.setAttribute('content', L.descriptionPage);
+
+    var n;
+    n = document.querySelectorAll('[data-t]');
+    for (var i = 0; i < n.length; i++) n[i].textContent = t(n[i].getAttribute('data-t'));
+    n = document.querySelectorAll('[data-th]');
+    for (i = 0; i < n.length; i++) n[i].innerHTML = t(n[i].getAttribute('data-th'));
+    n = document.querySelectorAll('[data-tp]');
+    for (i = 0; i < n.length; i++) n[i].setAttribute('placeholder', t(n[i].getAttribute('data-tp')));
+    n = document.querySelectorAll('[data-ta]');
+    for (i = 0; i < n.length; i++) n[i].setAttribute('aria-label', t(n[i].getAttribute('data-ta')));
+
+    $('langcode').textContent = LANGUE.toUpperCase();
+    $('lang').value = LANGUE;
+    $('golabel').textContent = (mode === 'mic') ? t('ecouter') : t('identifier');
+    $('copytxt').textContent = t('copierTitre');
+    $('sharetxt').textContent = t('partager');
+    paint();
+  }
+
 
   var store = {
     read: function () { try { return JSON.parse(localStorage.getItem('pf.finds') || '[]'); } catch (e) { return []; } },
@@ -509,7 +675,7 @@
       panels[k].hidden = (k !== next);
       tabs[k].setAttribute('aria-selected', String(k === next));
     }
-    $('golabel').textContent = next === 'mic' ? 'Écouter maintenant' : 'Identifier';
+    $('golabel').textContent = next === 'mic' ? t('ecouter') : t('identifier');
     hideAll();
     refreshGo();
   }
@@ -538,7 +704,7 @@
     if (!f) return;
     if (f.size > MAX_BYTES) {
       chosen = null; drop.classList.remove('armed'); $('fname').hidden = true;
-      fail('Fichier trop volumineux', 'Ce fichier dépasse 50 Mo. Découpe un extrait de trente secondes et réessaie.');
+      echec(e('tropGros'));
       refreshGo();
       return;
     }
@@ -546,7 +712,9 @@
     drop.classList.add('armed');
     var n = $('fname');
     n.hidden = false;
-    n.textContent = f.name + ' · ' + (f.size / 1048576).toFixed(1).replace('.', ',') + ' Mo';
+    var taille = (f.size / 1048576).toFixed(1);
+    if (LANGUE === 'fr') taille = taille.replace('.', ',');
+    n.textContent = f.name + ' · ' + taille + ' ' + t('unite');
     hideAll();
     refreshGo();
   }
@@ -569,21 +737,21 @@
 
   function startMic() {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      fail('Micro indisponible', 'Ton navigateur ne permet pas l’accès au microphone. Utilise l’onglet Fichier.');
+      echec(e('microAbsent'));
       return;
     }
     navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
       chunks = [];
       try { recorder = new MediaRecorder(stream); }
-      catch (e) { stream.getTracks().forEach(function (t) { t.stop(); }); fail('Micro indisponible', 'Ton navigateur ne sait pas enregistrer l’audio. Utilise l’onglet Fichier.'); return; }
+      catch (e) { stream.getTracks().forEach(function (t) { t.stop(); }); echec(e('microMuet')); return; }
 
       recorder.ondataavailable = function (e) { if (e.data && e.data.size) chunks.push(e.data); };
       recorder.onstop = function () {
         stream.getTracks().forEach(function (t) { t.stop(); });
         $('micbtn').classList.remove('rec');
-        $('micsub').innerHTML = 'Touche pour écouter ce qui joue autour de toi.<br>Dix secondes suffisent.';
+        $('micsub').innerHTML = t('micSous');
         var blob = new Blob(chunks, { type: 'audio/webm' });
-        if (!blob.size) { fail('Rien n’a été enregistré', 'Réessaie en approchant le téléphone de la source sonore.'); return; }
+        if (!blob.size) { echec(e('rienEnregistre')); return; }
         chosen = new File([blob], 'micro.webm', { type: 'audio/webm' });
         send();
       };
@@ -591,14 +759,14 @@
       recorder.start();
       $('micbtn').classList.add('rec');
       var left = 10;
-      $('micsub').textContent = 'À l’écoute… ' + left + ' s';
+      $('micsub').textContent = t('micEcoute') + left + ' s';
       micTimer = setInterval(function () {
         left--;
-        if (left > 0) { $('micsub').textContent = 'À l’écoute… ' + left + ' s'; }
+        if (left > 0) { $('micsub').textContent = t('micEcoute') + left + ' s'; }
       }, 1000);
       setTimeout(stopMic, 10000);
     }).catch(function () {
-      fail('Accès au micro refusé', 'Autorise le microphone dans les réglages de ton navigateur, ou utilise l’onglet Fichier.');
+      echec(e('microRefuse'));
     });
   }
 
@@ -616,6 +784,8 @@
     $('oops').classList.remove('on');
   }
 
+  function echec(paire) { fail(paire[0], paire[1]); }
+
   function fail(head, body) {
     hideAll();
     $('oopsh').textContent = head;
@@ -628,9 +798,9 @@
     if (on) {
       hideAll();
       $('scan').classList.add('on');
-      $('scantxt').textContent = mode === 'mic' ? 'Analyse de l’enregistrement' : 'Écoute en cours';
-      $('scansub').textContent = mode === 'link' ? 'Récupération de la vidéo…' : 'Extraction de l’empreinte sonore…';
-      subTimer = setTimeout(function () { $('scansub').textContent = 'Comparaison avec le catalogue…'; }, 4000);
+      $('scantxt').textContent = mode === 'mic' ? t('scanAnalyse') : t('scanEcoute');
+      $('scansub').textContent = mode === 'link' ? t('scanRecup') : t('scanEmpreinte');
+      subTimer = setTimeout(function () { $('scansub').textContent = t('scanCatalogue'); }, 4000);
     } else {
       if (subTimer) { clearTimeout(subTimer); subTimer = null; }
       $('scan').classList.remove('on');
@@ -661,11 +831,11 @@
       var host = '';
       try { var u = new URL(clean); host = u.hostname; } catch (e) { host = ''; }
       if (!host || host.indexOf('.') === -1) {
-        fail('Lien invalide', 'Copie le lien complet depuis l’application, il doit ressembler à https://…');
+        echec(e('lienInvalide'));
         return;
       }
       if (/youtube\.com|youtu\.be/i.test(clean)) {
-        fail('YouTube n’est pas accepté', 'YouTube bloque les téléchargements depuis un serveur. Télécharge la vidéo sur ton appareil et passe par l’onglet Fichier.');
+        echec(e('youtube'));
         return;
       }
       req = fetch(API + '/api/analyze', {
@@ -686,37 +856,40 @@
       return r.json().catch(function () { return null; });
     }).then(function (data) {
       scanning(false);
-      if (!data) { fail('Réponse illisible', 'Le serveur a répondu quelque chose d’inattendu. Réessaie dans un instant.'); return; }
-      if (data.error) { fail(titleFor(data.error), String(data.error).replace(/^[^\wÀ-ÿ]+/, '')); return; }
+      if (!data) { echec(e('illisible')); return; }
+      if (data.error) { echec(erreurServeur(data.error)); return; }
       show(data);
     }).catch(function (e) {
       scanning(false);
       if (e && e.message === 'timeout') {
-        fail('Délai dépassé', 'Le serveur met trop de temps. Télécharge la vidéo sur ton appareil et passe par l’onglet Fichier.');
+        echec(e('delai'));
       } else {
-        fail('Connexion impossible', 'Vérifie ta connexion internet et réessaie.');
+        echec(e('connexion'));
       }
     });
   }
 
-  function titleFor(msg) {
+  /* Le serveur répond en français : on reconnaît le cas et on affiche le
+     message dans la langue de l'utilisateur. Le texte brut n'est montré
+     qu'en dernier recours. */
+  function erreurServeur(msg) {
     var m = String(msg).toLowerCase();
-    if (m.indexOf('non reconnue') > -1) return 'Musique non reconnue';
-    if (m.indexOf('télécharger') > -1) return 'Vidéo inaccessible';
-    if (m.indexOf('volumineux') > -1) return 'Fichier trop volumineux';
-    if (m.indexOf('format') > -1) return 'Format non supporté';
-    return 'Analyse impossible';
+    if (m.indexOf('non reconnue') > -1 || m.indexOf('not recognized') > -1) return e('nonReconnue');
+    if (m.indexOf('télécharger') > -1 || m.indexOf('telecharger') > -1 || m.indexOf('download') > -1) return e('videoBloquee');
+    if (m.indexOf('volumineux') > -1 || m.indexOf('large') > -1) return e('tropGros');
+    if (m.indexOf('format') > -1) return e('formatRefuse');
+    return [e('analyse')[0], String(msg).replace(/^[^\wÀ-ÿ]+/, '')];
   }
 
   /* ---- résultat ---- */
   var current = null;
 
   function show(d) {
-    var t = d.title || 'Titre inconnu';
-    var a = d.subtitle || 'Artiste inconnu';
-    current = { t: t, a: a, img: d.image || '', sp: d.spotify_url || '', ap: d.apple_music || '', yt: d.youtube_url || '' };
+    var titre = d.title || t('titreInconnu');
+    var a = d.subtitle || t('artisteInconnu');
+    current = { t: titre, a: a, img: d.image || '', sp: d.spotify_url || '', ap: d.apple_music || '', yt: d.youtube_url || '' };
 
-    $('rtitle').textContent = t;
+    $('rtitle').textContent = titre;
     $('rartist').textContent = a;
 
     var cover = $('cover');
@@ -729,12 +902,12 @@
       cover.removeAttribute('src');
     }
 
-    var q = encodeURIComponent(t + ' ' + a);
+    var q = encodeURIComponent(titre + ' ' + a);
     $('l-sp').href = current.sp || ('https://open.spotify.com/search/' + q);
     $('l-ap').href = current.ap || ('https://music.apple.com/search?term=' + q);
     $('l-yt').href = current.yt || ('https://www.youtube.com/results?search_query=' + q);
 
-    $('copytxt').textContent = 'Copier le titre';
+    $('copytxt').textContent = t('copierTitre');
     $('copy').classList.remove('done');
 
     hideAll();
@@ -747,9 +920,9 @@
     if (!current) return;
     var txt = current.t + ' — ' + current.a;
     var done = function () {
-      $('copytxt').textContent = 'Copié';
+      $('copytxt').textContent = t('copie');
       $('copy').classList.add('done');
-      setTimeout(function () { $('copytxt').textContent = 'Copier le titre'; $('copy').classList.remove('done'); }, 1600);
+      setTimeout(function () { $('copytxt').textContent = t('copierTitre'); $('copy').classList.remove('done'); }, 1600);
     };
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(txt).then(done, done);
@@ -758,14 +931,14 @@
 
   $('share').addEventListener('click', function () {
     if (!current) return;
-    var txt = current.t + ' — ' + current.a + ' · trouvé avec PasteFind';
+    var txt = current.t + ' — ' + current.a + t('partageSuffixe');
     if (navigator.share) {
       navigator.share({ title: 'PasteFind', text: txt, url: 'https://pastefind.com' }).catch(function () {});
       return;
     }
     var done = function () {
-      $('sharetxt').textContent = 'Copié pour partage';
-      setTimeout(function () { $('sharetxt').textContent = 'Partager'; }, 1600);
+      $('sharetxt').textContent = t('copiePartage');
+      setTimeout(function () { $('sharetxt').textContent = t('partager'); }, 1600);
     };
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(txt).then(done, done);
@@ -782,10 +955,10 @@
 
   function ago(ms) {
     var s = Math.max(1, Math.round((Date.now() - ms) / 1000));
-    if (s < 60) return 'à l’instant';
-    var m = Math.round(s / 60); if (m < 60) return m + ' min';
-    var h = Math.round(m / 60); if (h < 24) return h + ' h';
-    return Math.round(h / 24) + ' j';
+    if (s < 60) return t('instant');
+    var m = Math.round(s / 60); if (m < 60) return m + t('min');
+    var h = Math.round(m / 60); if (h < 24) return h + t('heure');
+    return Math.round(h / 24) + t('jour');
   }
 
   function paint() {
@@ -819,7 +992,13 @@
 
   $('clear').addEventListener('click', function () { store.write([]); paint(); });
 
-  paint();
+  $('lang').addEventListener('change', function () {
+    var code = $('lang').value;
+    try { localStorage.setItem('pf.lang', code); } catch (err) {}
+    appliquerLangue(code);
+  });
+
+  appliquerLangue(langueChoisie());
   refreshGo();
 
   /* ---- application installable ---- */
