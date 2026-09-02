@@ -208,8 +208,8 @@
     .bg .ring{
       position:absolute;left:50%;top:44%;
       width:560px;height:560px;margin:-280px 0 0 -280px;
-      border:1px solid rgba(255,178,36,.34);border-radius:50%;
-      opacity:0;animation:onde 13s linear infinite;
+      border:1px solid rgba(255,178,36,.15);border-radius:50%;
+      opacity:0;animation:onde 16s linear infinite;
       will-change:transform,opacity;
     }
     /* Aiguille de radar : un secteur clair qui tourne lentement. */
@@ -217,13 +217,13 @@
       position:absolute;left:50%;top:44%;
       width:1600px;height:1600px;margin:-800px 0 0 -800px;border-radius:50%;
       background:conic-gradient(from 0deg,
-        rgba(255,178,36,.15) 0deg,
-        rgba(255,178,36,.05) 16deg,
+        rgba(255,178,36,.055) 0deg,
+        rgba(255,178,36,.018) 16deg,
         rgba(255,178,36,0) 44deg,
         rgba(255,178,36,0) 360deg);
       -webkit-mask-image:radial-gradient(circle,#000 0%,#000 48%,transparent 70%);
       mask-image:radial-gradient(circle,#000 0%,#000 48%,transparent 70%);
-      animation:balayage 16s linear infinite;
+      animation:balayage 26s linear infinite;
       will-change:transform;
     }
     @keyframes balayage{to{transform:rotate(360deg)}}
@@ -231,14 +231,14 @@
     /* Notes de musique qui apparaissent et s'effacent. */
     .bg .note{
       position:absolute;left:var(--x);top:var(--y);
-      font-size:var(--s);color:rgba(255,178,36,.5);
-      opacity:0;animation:flotte 11s ease-in-out infinite;
+      font-size:var(--s);color:rgba(255,178,36,.22);
+      opacity:0;animation:flotte 14s ease-in-out infinite;
       animation-delay:var(--d);will-change:transform,opacity;
     }
     @keyframes flotte{
       0%{opacity:0;transform:translateY(14px) rotate(-7deg)}
-      22%{opacity:.7}
-      55%{opacity:.5}
+      22%{opacity:.34}
+      55%{opacity:.24}
       100%{opacity:0;transform:translateY(-30px) rotate(7deg)}
     }
 
@@ -248,16 +248,16 @@
     .bg .halo{
       position:absolute;left:50%;top:44%;width:900px;height:900px;
       margin:-450px 0 0 -450px;border-radius:50%;
-      background:radial-gradient(circle,rgba(255,178,36,.06) 0%,transparent 62%);
+      background:radial-gradient(circle,rgba(255,178,36,.035) 0%,transparent 62%);
       animation:respire 9s ease-in-out infinite;
     }
     @keyframes onde{
       0%{transform:scale(.16);opacity:0}
-      14%{opacity:.55}
+      14%{opacity:.28}
       100%{transform:scale(2.9);opacity:0}
     }
     @keyframes respire{
-      0%,100%{transform:scale(1);opacity:.75}
+      0%,100%{transform:scale(1);opacity:.6}
       50%{transform:scale(1.14);opacity:1}
     }
 
