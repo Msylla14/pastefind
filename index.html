@@ -212,6 +212,36 @@
       opacity:0;animation:onde 13s linear infinite;
       will-change:transform,opacity;
     }
+    /* Aiguille de radar : un secteur clair qui tourne lentement. */
+    .bg .sweep{
+      position:absolute;left:50%;top:44%;
+      width:1600px;height:1600px;margin:-800px 0 0 -800px;border-radius:50%;
+      background:conic-gradient(from 0deg,
+        rgba(255,178,36,.15) 0deg,
+        rgba(255,178,36,.05) 16deg,
+        rgba(255,178,36,0) 44deg,
+        rgba(255,178,36,0) 360deg);
+      -webkit-mask-image:radial-gradient(circle,#000 0%,#000 48%,transparent 70%);
+      mask-image:radial-gradient(circle,#000 0%,#000 48%,transparent 70%);
+      animation:balayage 16s linear infinite;
+      will-change:transform;
+    }
+    @keyframes balayage{to{transform:rotate(360deg)}}
+
+    /* Notes de musique qui apparaissent et s'effacent. */
+    .bg .note{
+      position:absolute;left:var(--x);top:var(--y);
+      font-size:var(--s);color:rgba(255,178,36,.5);
+      opacity:0;animation:flotte 11s ease-in-out infinite;
+      animation-delay:var(--d);will-change:transform,opacity;
+    }
+    @keyframes flotte{
+      0%{opacity:0;transform:translateY(14px) rotate(-7deg)}
+      22%{opacity:.7}
+      55%{opacity:.5}
+      100%{opacity:0;transform:translateY(-30px) rotate(7deg)}
+    }
+
     .bg .r2{animation-delay:3.25s}
     .bg .r3{animation-delay:6.5s}
     .bg .r4{animation-delay:9.75s}
@@ -285,6 +315,14 @@
   <div class="ring r2"></div>
   <div class="ring r3"></div>
   <div class="ring r4"></div>
+  <div class="sweep"></div>
+  <span class="note" style="--x:11%;--y:26%;--s:20px;--d:0s">&#9834;</span>
+  <span class="note" style="--x:26%;--y:69%;--s:15px;--d:2.4s">&#9835;</span>
+  <span class="note" style="--x:44%;--y:15%;--s:16px;--d:5.1s">&#9834;</span>
+  <span class="note" style="--x:63%;--y:78%;--s:21px;--d:1.3s">&#9836;</span>
+  <span class="note" style="--x:79%;--y:33%;--s:17px;--d:6.8s">&#9835;</span>
+  <span class="note" style="--x:90%;--y:62%;--s:15px;--d:3.9s">&#9834;</span>
+  <span class="note" style="--x:34%;--y:44%;--s:14px;--d:8.2s">&#9836;</span>
 </div>
 
 <div class="shell">
