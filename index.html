@@ -208,7 +208,7 @@
     .bg .ring{
       position:absolute;left:50%;top:44%;
       width:560px;height:560px;margin:-280px 0 0 -280px;
-      border:1px solid rgba(255,178,36,.15);border-radius:50%;
+      border:1px solid rgba(255,178,36,.34);border-radius:50%;
       opacity:0;animation:onde 16s linear infinite;
       will-change:transform,opacity;
     }
@@ -241,14 +241,14 @@
     /* Notes de musique qui apparaissent et s'effacent. */
     .bg .note{
       position:absolute;left:var(--x);top:var(--y);
-      font-size:var(--s);color:rgba(255,178,36,.22);
+      font-size:var(--s);color:rgba(255,178,36,.5);
       opacity:0;animation:flotte 14s ease-in-out infinite;
       animation-delay:var(--d);will-change:transform,opacity;
     }
     @keyframes flotte{
       0%{opacity:0;transform:translateY(14px) rotate(-7deg)}
-      22%{opacity:.34}
-      55%{opacity:.24}
+      22%{opacity:.7}
+      55%{opacity:.5}
       100%{opacity:0;transform:translateY(-30px) rotate(7deg)}
     }
 
@@ -263,7 +263,7 @@
     }
     @keyframes onde{
       0%{transform:scale(.16);opacity:0}
-      14%{opacity:.28}
+      14%{opacity:.55}
       100%{transform:scale(2.9);opacity:0}
     }
     @keyframes respire{
