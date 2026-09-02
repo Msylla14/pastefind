@@ -189,9 +189,103 @@
 
   @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none !important;transition:none !important}}
   @media (min-width:560px){.pitch{padding-bottom:32px}.stage{padding:22px 14px 0}}
+
+  /* ══════════════════════════════════════════════════════════════
+     GRAND ÉCRAN UNIQUEMENT — à partir de 1080 px de large.
+     Un téléphone n'atteint jamais cette largeur : l'application
+     Android reste donc exactement telle qu'elle est aujourd'hui.
+     ══════════════════════════════════════════════════════════════ */
+
+  /* Fond animé : ondes lentes qui partent du centre, comme un radar. */
+  .bg{display:none}
+
+  @media (min-width:1080px){
+
+    .bg{
+      display:block;position:fixed;inset:0;z-index:0;
+      overflow:hidden;pointer-events:none;
+    }
+    .bg .ring{
+      position:absolute;left:50%;top:44%;
+      width:560px;height:560px;margin:-280px 0 0 -280px;
+      border:1px solid rgba(255,178,36,.34);border-radius:50%;
+      opacity:0;animation:onde 13s linear infinite;
+      will-change:transform,opacity;
+    }
+    .bg .r2{animation-delay:3.25s}
+    .bg .r3{animation-delay:6.5s}
+    .bg .r4{animation-delay:9.75s}
+    .bg .halo{
+      position:absolute;left:50%;top:44%;width:900px;height:900px;
+      margin:-450px 0 0 -450px;border-radius:50%;
+      background:radial-gradient(circle,rgba(255,178,36,.06) 0%,transparent 62%);
+      animation:respire 9s ease-in-out infinite;
+    }
+    @keyframes onde{
+      0%{transform:scale(.16);opacity:0}
+      14%{opacity:.55}
+      100%{transform:scale(2.9);opacity:0}
+    }
+    @keyframes respire{
+      0%,100%{transform:scale(1);opacity:.75}
+      50%{transform:scale(1.14);opacity:1}
+    }
+
+    /* Deux colonnes : la recherche à gauche, les trouvailles à droite. */
+    body{padding-bottom:calc(72px + env(safe-area-inset-bottom))}
+    .shell{
+      position:relative;z-index:1;
+      max-width:1180px;
+      display:grid;
+      grid-template-columns:minmax(0,1.05fr) minmax(0,.85fr);
+      grid-template-areas:
+        "head    head"
+        "pitch   hist"
+        "console hist"
+        "result  hist"
+        "oops    hist"
+        "foot    foot";
+      column-gap:44px;
+      align-items:start;
+    }
+    header.top{grid-area:head}
+    .pitch{grid-area:pitch;padding-bottom:26px}
+    .pitch h1{font-size:44px}
+    .console{grid-area:console}
+    .result{grid-area:result}
+    .oops{grid-area:oops}
+    footer.foot{grid-area:foot}
+
+    .hist{
+      grid-area:hist;margin-top:6px;
+      background:linear-gradient(180deg,var(--panel) 0%,var(--ground-2) 100%);
+      border:1px solid var(--line);border-radius:var(--r-lg);
+      padding:18px 20px 8px;
+      box-shadow:0 1px 0 rgba(255,255,255,.03) inset,0 26px 60px -34px #000;
+      position:sticky;top:26px;
+      max-height:calc(100vh - 52px);overflow:auto;
+    }
+    .hist-hd{padding-bottom:14px}
+    .hist .row{padding:13px 0}
+    .hist .empty{padding:22px 0 26px}
+
+    .links{grid-template-columns:repeat(3,1fr)}
+  }
+
+  /* Écran large mais mouvement réduit : on garde les colonnes,
+     on coupe l'animation. */
+  @media (prefers-reduced-motion: reduce){.bg{display:none !important}}
 </style>
 </head>
 <body>
+
+<div class="bg" aria-hidden="true">
+  <div class="halo"></div>
+  <div class="ring r1"></div>
+  <div class="ring r2"></div>
+  <div class="ring r3"></div>
+  <div class="ring r4"></div>
+</div>
 
 <div class="shell">
 
