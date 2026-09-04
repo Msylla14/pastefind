@@ -386,7 +386,10 @@ def download_audio(url: str) -> str | None:
             'preferredcodec': 'mp3',
             'preferredquality': '128',
         }],
-        'postprocessor_args': ['-t', '30'],  # Only first 30 seconds
+        # On garde 2 min 30 : AudD n'ecoute que le debut du fichier qu'on
+        # lui envoie, alors on veut de la matiere pour decouper plusieurs
+        # extraits quand le premier ne donne rien.
+        'postprocessor_args': ['-t', '150'],
     }
 
     appliquer_reseau(ydl_opts)
@@ -464,7 +467,7 @@ def download_audio(url: str) -> str | None:
 # HELPER: Truncate large files for AudD
 # ─────────────────────────────────────────────
 def truncate_audio_if_needed(file_path: str, max_mb: int = 8) -> str:
-    """If file is too large, truncate to first 30 seconds using ffmpeg."""
+    """Si le fichier est trop lourd, on le ramene a 2 min 30 avec ffmpeg."""
     file_size = os.path.getsize(file_path)
     max_bytes = max_mb * 1024 * 1024
 
@@ -486,7 +489,7 @@ def truncate_audio_if_needed(file_path: str, max_mb: int = 8) -> str:
 
     for ffmpeg in ffmpeg_paths:
         try:
-            ret = os.system(f'{ffmpeg} -i "{file_path}" -t 30 -acodec libmp3lame -ab 128k "{truncated_path}" -y -loglevel quiet 2>/dev/null')
+            ret = os.system(f'{ffmpeg} -i "{file_path}" -t 150 -acodec libmp3lame -ab 128k "{truncated_path}" -y -loglevel quiet 2>/dev/null')
             if ret == 0 and os.path.exists(truncated_path):
                 logger.info(f"[Truncate] Truncated to: {truncated_path}")
                 return truncated_path
@@ -495,6 +498,82 @@ def truncate_audio_if_needed(file_path: str, max_mb: int = 8) -> str:
 
     logger.warning("[Truncate] ffmpeg not available, using original file")
     return file_path
+
+# ─────────────────────────────────────────────
+# HELPER: analyse par fenetres successives
+# ─────────────────────────────────────────────
+def chemin_ffmpeg() -> str:
+    """Premier ffmpeg reellement utilisable sur cette machine."""
+    candidats = [
+        os.path.join(FFMPEG_DIR, 'ffmpeg') if FFMPEG_DIR else None,
+        '/var/www/pastefind-backend/bin/ffmpeg',
+        '/usr/bin/ffmpeg',
+        '/usr/local/bin/ffmpeg',
+        'ffmpeg',
+    ]
+    for candidat in [c for c in candidats if c]:
+        try:
+            if subprocess.run([candidat, '-version'],
+                              capture_output=True, timeout=8).returncode == 0:
+                return candidat
+        except Exception:
+            continue
+    return ''
+
+
+def couper_extrait(source: str, debut: int, duree: int = 30) -> str:
+    """Decoupe <duree> secondes a partir de <debut>. Renvoie une chaine vide
+    si l'audio est deja fini ou si ffmpeg n'est pas la."""
+    ffmpeg = chemin_ffmpeg()
+    if not ffmpeg:
+        return ''
+    sortie = f"{os.path.splitext(source)[0]}_f{debut}.mp3"
+    try:
+        subprocess.run(
+            [ffmpeg, '-ss', str(debut), '-t', str(duree), '-i', source,
+             '-acodec', 'libmp3lame', '-ab', '128k', '-y', sortie],
+            capture_output=True, timeout=90)
+    except Exception as err:
+        logger.warning(f"[fenetre] ffmpeg a echoue : {err}")
+        return ''
+    # moins de ~1,5 s d'audio : on a depasse la fin du fichier
+    if not os.path.exists(sortie) or os.path.getsize(sortie) < 24000:
+        try:
+            os.remove(sortie)
+        except Exception:
+            pass
+        return ''
+    return sortie
+
+
+# AudD ne reconnait qu'a partir du DEBUT du fichier qu'on lui envoie. Quand la
+# video commence par de la parole, un logo anime ou du silence, cette premiere
+# fenetre ne contient pas de musique et rien n'est trouve — alors que le morceau
+# s'entend tres bien un peu plus loin. On avance donc dans la video par tranches
+# de 30 s jusqu'a trouver, au lieu d'abandonner apres le premier essai.
+DEPARTS_FENETRES = [0, 40, 80, 120]
+
+
+def analyser_par_fenetres(file_path: str) -> dict:
+    dernier = {"error": "no_match"}
+    for debut in DEPARTS_FENETRES:
+        extrait = couper_extrait(file_path, debut, 30)
+        if not extrait:
+            if debut == 0:
+                # pas de ffmpeg : on retombe sur l'ancien comportement
+                return analyze_with_audd(file_path)
+            break
+        logger.info(f"[AudD] fenetre {debut}-{debut + 30} s")
+        resultat = analyze_with_audd(extrait)
+        try:
+            os.remove(extrait)
+        except Exception:
+            pass
+        if resultat.get("error") != "no_match":
+            return resultat
+        dernier = resultat
+    return dernier
+
 
 # ─────────────────────────────────────────────
 # ROUTES
@@ -705,8 +784,8 @@ async def analyze_video(data: VideoURL):
         # Truncate if too large
         audio_path = await asyncio.to_thread(truncate_audio_if_needed, audio_path)
 
-        # Analyze
-        result = await asyncio.to_thread(analyze_with_audd, audio_path)
+        # Analyse : premiere fenetre, puis plus loin dans la video si besoin
+        result = await asyncio.to_thread(analyser_par_fenetres, audio_path)
 
         # Cleanup
         try:
@@ -777,8 +856,8 @@ async def upload_file(file: UploadFile = File(...)):
         # Truncate if too large
         temp_path = await asyncio.to_thread(truncate_audio_if_needed, temp_path)
 
-        # Analyze
-        result = await asyncio.to_thread(analyze_with_audd, temp_path)
+        # Analyse : premiere fenetre, puis plus loin dans le fichier si besoin
+        result = await asyncio.to_thread(analyser_par_fenetres, temp_path)
 
         # Cleanup
         try:
@@ -832,7 +911,7 @@ async def privacy_policy():
     <p>PasteFind ne demande pas de compte, ne collecte ni nom, ni adresse e-mail, ni donnée de localisation, et n'utilise ni cookie publicitaire ni traceur.</p>
 
     <h2>3. Utilisation et conservation</h2>
-    <p>Seuls les 30 premières secondes de l'audio sont analysées. Cet extrait est transmis au service de reconnaissance musicale <a href="https://audd.io" target="_blank" rel="noopener">AudD.io</a>, qui l'utilise pour identifier le morceau et nous renvoyer son titre, son artiste et sa pochette. Le traitement d'AudD.io est régi par sa propre politique de confidentialité.</p>
+    <p>Seul un court extrait de l'audio — deux minutes trente au maximum — est analysé. Cet extrait est transmis au service de reconnaissance musicale <a href="https://audd.io" target="_blank" rel="noopener">AudD.io</a>, qui l'utilise pour identifier le morceau et nous renvoyer son titre, son artiste et sa pochette. Le traitement d'AudD.io est régi par sa propre politique de confidentialité.</p>
     <p>Le fichier temporaire créé sur nos serveurs est <strong>supprimé immédiatement après l'analyse</strong>. Aucun historique de vos recherches n'est conservé, ni sur nos serveurs, ni sur votre appareil.</p>
 
     <h2>4. Vos droits</h2>
