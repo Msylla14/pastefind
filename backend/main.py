@@ -536,8 +536,9 @@ def couper_extrait(source: str, debut: int, duree: int = 30) -> str:
     except Exception as err:
         logger.warning(f"[fenetre] ffmpeg a echoue : {err}")
         return ''
-    # moins de ~1,5 s d'audio : on a depasse la fin du fichier
-    if not os.path.exists(sortie) or os.path.getsize(sortie) < 24000:
+    # moins de ~4 s d'audio : trop court pour reconnaitre quoi que ce soit,
+    # on est arrive au bout du fichier
+    if not os.path.exists(sortie) or os.path.getsize(sortie) < 64000:
         try:
             os.remove(sortie)
         except Exception:
@@ -550,8 +551,10 @@ def couper_extrait(source: str, debut: int, duree: int = 30) -> str:
 # video commence par de la parole, un logo anime ou du silence, cette premiere
 # fenetre ne contient pas de musique et rien n'est trouve — alors que le morceau
 # s'entend tres bien un peu plus loin. On avance donc dans la video par tranches
-# de 30 s jusqu'a trouver, au lieu d'abandonner apres le premier essai.
-DEPARTS_FENETRES = [0, 40, 80, 120]
+# de 30 s jusqu'a trouver, au lieu d'abandonner apres le premier essai. Les
+# fenetres se chevauchent pour ne pas couper un refrain en deux, et la
+# deuxieme demarre tot (25 s) afin de couvrir aussi les videos courtes.
+DEPARTS_FENETRES = [0, 25, 55, 85, 115]
 
 
 def analyser_par_fenetres(file_path: str) -> dict:
