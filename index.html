@@ -9,6 +9,10 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="icon" type="image/png" href="/favicon.png">
 <link rel="apple-touch-icon" href="/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="PasteFind">
 <meta property="og:type" content="website">
 <meta property="og:title" content="PasteFind — Trouve la musique d'une vidéo">
 <meta property="og:description" content="Colle un lien, dépose un fichier ou laisse le micro écouter. PasteFind identifie le morceau en quelques secondes.">
@@ -485,6 +489,7 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
       <p data-th="confiance"></p>
     </div>
+    <p class="fine" id="ios-astuce" data-th="installerIphone" hidden></p>
     <div class="fine">PasteFind · contact@pastefind.com</div>
   </footer>
 
@@ -521,7 +526,7 @@
       deposeSous: 'ou touche pour parcourir · MP3, MP4, WAV, M4A',
       aideFichier: 'Jusqu\'à <b>50 Mo</b>. Seul un extrait est analysé.',
       micAria: 'Écouter autour de moi',
-      micSous: 'Touche pour écouter ce qui joue autour de toi.<br>Dix secondes suffisent.',
+      micSous: 'Touche pour écouter ce qui joue autour de toi.<br>Quinze secondes suffisent.',
       micEcoute: 'À l\'écoute… ',
       identifier: 'Identifier', ecouter: 'Écouter maintenant',
       scanEcoute: 'Écoute en cours', scanAnalyse: 'Analyse de l\'enregistrement',
@@ -533,6 +538,7 @@
       partageSuffixe: ' · trouvé avec PasteFind',
       tesTrouvailles: 'Tes trouvailles', toutEffacer: 'Tout effacer',
       histoireVide: 'Rien pour l\'instant. Ce que tu identifies s\'enregistre ici, sur ton appareil uniquement.',
+      installerIphone: 'Sur iPhone, tu peux l\'installer : touche <b>Partager</b>, puis <b>Sur l\'écran d\'accueil</b>.',
       confiance: 'Ton fichier est supprimé de nos serveurs dès l\'analyse terminée. Aucun compte, aucune publicité, aucun traceur. <a href="/privacy/">Politique de confidentialité</a>.',
       titreInconnu: 'Titre inconnu', artisteInconnu: 'Artiste inconnu',
       unite: 'Mo',
@@ -568,7 +574,7 @@
       deposeSous: 'or tap to browse · MP3, MP4, WAV, M4A',
       aideFichier: 'Up to <b>50 MB</b>. Only an excerpt is analyzed.',
       micAria: 'Listen around me',
-      micSous: 'Tap to listen to what\'s playing around you.<br>Ten seconds is enough.',
+      micSous: 'Tap to listen to what\'s playing around you.<br>Fifteen seconds is enough.',
       micEcoute: 'Listening… ',
       identifier: 'Identify', ecouter: 'Listen now',
       scanEcoute: 'Listening', scanAnalyse: 'Analyzing the recording',
@@ -580,6 +586,7 @@
       partageSuffixe: ' · found with PasteFind',
       tesTrouvailles: 'Your finds', toutEffacer: 'Clear all',
       histoireVide: 'Nothing yet. Whatever you identify is saved here, on your device only.',
+      installerIphone: 'On iPhone you can install it: tap <b>Share</b>, then <b>Add to Home Screen</b>.',
       confiance: 'Your file is deleted from our servers as soon as the analysis is done. No account, no ads, no trackers. <a href="/privacy/">Privacy policy</a>.',
       titreInconnu: 'Unknown title', artisteInconnu: 'Unknown artist',
       unite: 'MB',
@@ -615,7 +622,7 @@
       deposeSous: 'o toca para buscar · MP3, MP4, WAV, M4A',
       aideFichier: 'Hasta <b>50 MB</b>. Solo se analiza un extracto.',
       micAria: 'Escuchar a mi alrededor',
-      micSous: 'Toca para escuchar lo que suena a tu alrededor.<br>Diez segundos bastan.',
+      micSous: 'Toca para escuchar lo que suena a tu alrededor.<br>Quince segundos bastan.',
       micEcoute: 'Escuchando… ',
       identifier: 'Identificar', ecouter: 'Escuchar ahora',
       scanEcoute: 'Escuchando', scanAnalyse: 'Analizando la grabación',
@@ -627,6 +634,7 @@
       partageSuffixe: ' · encontrado con PasteFind',
       tesTrouvailles: 'Tus hallazgos', toutEffacer: 'Borrar todo',
       histoireVide: 'Nada por ahora. Lo que identifiques se guarda aquí, solo en tu dispositivo.',
+      installerIphone: 'En iPhone puedes instalarlo: pulsa <b>Compartir</b> y luego <b>Añadir a pantalla de inicio</b>.',
       confiance: 'Tu archivo se elimina de nuestros servidores en cuanto termina el análisis. Sin cuenta, sin publicidad, sin rastreadores. <a href="/privacy/">Política de privacidad</a>.',
       titreInconnu: 'Título desconocido', artisteInconnu: 'Artista desconocido',
       unite: 'MB',
@@ -662,7 +670,7 @@
       deposeSous: 'ou toque para procurar · MP3, MP4, WAV, M4A',
       aideFichier: 'Até <b>50 MB</b>. Só um trecho é analisado.',
       micAria: 'Ouvir ao meu redor',
-      micSous: 'Toque para ouvir o que está tocando ao seu redor.<br>Dez segundos bastam.',
+      micSous: 'Toque para ouvir o que está tocando ao seu redor.<br>Quinze segundos bastam.',
       micEcoute: 'Ouvindo… ',
       identifier: 'Identificar', ecouter: 'Ouvir agora',
       scanEcoute: 'Ouvindo', scanAnalyse: 'Analisando a gravação',
@@ -674,6 +682,7 @@
       partageSuffixe: ' · achado com o PasteFind',
       tesTrouvailles: 'Suas descobertas', toutEffacer: 'Apagar tudo',
       histoireVide: 'Nada por enquanto. O que você identificar fica salvo aqui, só no seu aparelho.',
+      installerIphone: 'No iPhone dá para instalar: toque em <b>Compartilhar</b> e depois <b>Adicionar à Tela de Início</b>.',
       confiance: 'Seu arquivo é apagado dos nossos servidores assim que a análise termina. Sem conta, sem anúncios, sem rastreadores. <a href="/privacy/">Política de privacidade</a>.',
       titreInconnu: 'Título desconhecido', artisteInconnu: 'Artista desconhecido',
       unite: 'MB',
@@ -709,7 +718,7 @@
       deposeSous: 'oppure tocca per sfogliare · MP3, MP4, WAV, M4A',
       aideFichier: 'Fino a <b>50 MB</b>. Viene analizzato solo un estratto.',
       micAria: 'Ascolta intorno a me',
-      micSous: 'Tocca per ascoltare quello che suona intorno a te.<br>Bastano dieci secondi.',
+      micSous: 'Tocca per ascoltare quello che suona intorno a te.<br>Bastano quindici secondi.',
       micEcoute: 'In ascolto… ',
       identifier: 'Identifica', ecouter: 'Ascolta ora',
       scanEcoute: 'In ascolto', scanAnalyse: 'Analisi della registrazione',
@@ -721,6 +730,7 @@
       partageSuffixe: ' · trovato con PasteFind',
       tesTrouvailles: 'Le tue scoperte', toutEffacer: 'Cancella tutto',
       histoireVide: 'Ancora niente. Quello che riconosci resta qui, solo sul tuo dispositivo.',
+      installerIphone: 'Su iPhone puoi installarla: tocca <b>Condividi</b>, poi <b>Aggiungi a Home</b>.',
       confiance: 'Il tuo file viene cancellato dai nostri server appena l\'analisi è finita. Nessun account, nessuna pubblicità, nessun tracciamento. <a href="/privacy/">Informativa sulla privacy</a>.',
       titreInconnu: 'Titolo sconosciuto', artisteInconnu: 'Artista sconosciuto',
       unite: 'MB',
@@ -886,17 +896,34 @@
     }
     navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
       chunks = [];
-      try { recorder = new MediaRecorder(stream); }
-      catch (err) { stream.getTracks().forEach(function (p) { p.stop(); }); echec(e('microMuet')); return; }
+      /* Safari (iPhone, iPad) n'enregistre qu'en MP4/AAC, jamais en WebM.
+         On demande donc le premier format que le navigateur sait produire,
+         et on nomme le fichier avec l'extension qui correspond vraiment. */
+      var formats = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/aac'];
+      var format = '';
+      if (window.MediaRecorder && MediaRecorder.isTypeSupported) {
+        for (var i = 0; i < formats.length; i++) {
+          if (MediaRecorder.isTypeSupported(formats[i])) { format = formats[i]; break; }
+        }
+      }
+      try { recorder = format ? new MediaRecorder(stream, { mimeType: format }) : new MediaRecorder(stream); }
+      catch (err) {
+        try { recorder = new MediaRecorder(stream); }
+        catch (err2) { stream.getTracks().forEach(function (p) { p.stop(); }); echec(e('microMuet')); return; }
+      }
+      var typeReel = recorder.mimeType || format || 'audio/webm';
 
       recorder.ondataavailable = function (e) { if (e.data && e.data.size) chunks.push(e.data); };
       recorder.onstop = function () {
         stream.getTracks().forEach(function (t) { t.stop(); });
         $('micbtn').classList.remove('rec');
         $('micsub').innerHTML = t('micSous');
-        var blob = new Blob(chunks, { type: 'audio/webm' });
+        var blob = new Blob(chunks, { type: typeReel });
         if (!blob.size) { echec(e('rienEnregistre')); return; }
-        chosen = new File([blob], 'micro.webm', { type: 'audio/webm' });
+        var ext = typeReel.indexOf('mp4') > -1 ? 'mp4'
+                : typeReel.indexOf('aac') > -1 ? 'aac'
+                : typeReel.indexOf('ogg') > -1 ? 'ogg' : 'webm';
+        chosen = new File([blob], 'micro.' + ext, { type: typeReel });
         send();
       };
 
@@ -1144,6 +1171,16 @@
 
   appliquerLangue(langueChoisie());
   refreshGo();
+
+  /* Astuce d'installation : uniquement sur iPhone / iPad, et uniquement tant
+     que le site n'est pas deja lance depuis l'ecran d'accueil. */
+  (function () {
+    var pomme = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+                (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    var installe = navigator.standalone === true ||
+                   (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+    if (pomme && !installe) $('ios-astuce').hidden = false;
+  })();
 
   /* ---- application installable ---- */
   if ('serviceWorker' in navigator) {
