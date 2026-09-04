@@ -519,7 +519,7 @@
       aideLien: 'Fonctionne avec <b>TikTok</b>, <b>Facebook</b> et <b>Instagram</b>. Pour YouTube, télécharge la vidéo et passe par l\'onglet Fichier.',
       deposeTitre: 'Dépose ton fichier ici',
       deposeSous: 'ou touche pour parcourir · MP3, MP4, WAV, M4A',
-      aideFichier: 'Jusqu\'à <b>50 Mo</b>. Seules les 30 premières secondes sont analysées.',
+      aideFichier: 'Jusqu\'à <b>50 Mo</b>. Seul un extrait est analysé.',
       micAria: 'Écouter autour de moi',
       micSous: 'Touche pour écouter ce qui joue autour de toi.<br>Dix secondes suffisent.',
       micEcoute: 'À l\'écoute… ',
@@ -566,7 +566,7 @@
       aideLien: 'Works with <b>TikTok</b>, <b>Facebook</b> and <b>Instagram</b>. For YouTube, download the video and use the File tab.',
       deposeTitre: 'Drop your file here',
       deposeSous: 'or tap to browse · MP3, MP4, WAV, M4A',
-      aideFichier: 'Up to <b>50 MB</b>. Only the first 30 seconds are analyzed.',
+      aideFichier: 'Up to <b>50 MB</b>. Only an excerpt is analyzed.',
       micAria: 'Listen around me',
       micSous: 'Tap to listen to what\'s playing around you.<br>Ten seconds is enough.',
       micEcoute: 'Listening… ',
@@ -613,7 +613,7 @@
       aideLien: 'Funciona con <b>TikTok</b>, <b>Facebook</b> e <b>Instagram</b>. Para YouTube, descarga el vídeo y usa la pestaña Archivo.',
       deposeTitre: 'Suelta tu archivo aquí',
       deposeSous: 'o toca para buscar · MP3, MP4, WAV, M4A',
-      aideFichier: 'Hasta <b>50 MB</b>. Solo se analizan los primeros 30 segundos.',
+      aideFichier: 'Hasta <b>50 MB</b>. Solo se analiza un extracto.',
       micAria: 'Escuchar a mi alrededor',
       micSous: 'Toca para escuchar lo que suena a tu alrededor.<br>Diez segundos bastan.',
       micEcoute: 'Escuchando… ',
@@ -660,7 +660,7 @@
       aideLien: 'Funciona com <b>TikTok</b>, <b>Facebook</b> e <b>Instagram</b>. Para o YouTube, baixe o vídeo e use a aba Arquivo.',
       deposeTitre: 'Solte seu arquivo aqui',
       deposeSous: 'ou toque para procurar · MP3, MP4, WAV, M4A',
-      aideFichier: 'Até <b>50 MB</b>. Só os primeiros 30 segundos são analisados.',
+      aideFichier: 'Até <b>50 MB</b>. Só um trecho é analisado.',
       micAria: 'Ouvir ao meu redor',
       micSous: 'Toque para ouvir o que está tocando ao seu redor.<br>Dez segundos bastam.',
       micEcoute: 'Ouvindo… ',
@@ -707,7 +707,7 @@
       aideLien: 'Funziona con <b>TikTok</b>, <b>Facebook</b> e <b>Instagram</b>. Per YouTube, scarica il video e usa la scheda File.',
       deposeTitre: 'Trascina qui il tuo file',
       deposeSous: 'oppure tocca per sfogliare · MP3, MP4, WAV, M4A',
-      aideFichier: 'Fino a <b>50 MB</b>. Vengono analizzati solo i primi 30 secondi.',
+      aideFichier: 'Fino a <b>50 MB</b>. Viene analizzato solo un estratto.',
       micAria: 'Ascolta intorno a me',
       micSous: 'Tocca per ascoltare quello che suona intorno a te.<br>Bastano dieci secondi.',
       micEcoute: 'In ascolto… ',
@@ -887,7 +887,7 @@
     navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
       chunks = [];
       try { recorder = new MediaRecorder(stream); }
-      catch (e) { stream.getTracks().forEach(function (t) { t.stop(); }); echec(e('microMuet')); return; }
+      catch (err) { stream.getTracks().forEach(function (p) { p.stop(); }); echec(e('microMuet')); return; }
 
       recorder.ondataavailable = function (e) { if (e.data && e.data.size) chunks.push(e.data); };
       recorder.onstop = function () {
@@ -902,13 +902,13 @@
 
       recorder.start();
       $('micbtn').classList.add('rec');
-      var left = 10;
+      var left = 15;
       $('micsub').textContent = t('micEcoute') + left + ' s';
       micTimer = setInterval(function () {
         left--;
         if (left > 0) { $('micsub').textContent = t('micEcoute') + left + ' s'; }
       }, 1000);
-      setTimeout(stopMic, 10000);
+      setTimeout(stopMic, 15000);
     }).catch(function () {
       echec(e('microRefuse'));
     });
@@ -954,9 +954,9 @@
 
   function withTimeout(promise) {
     return new Promise(function (resolve, reject) {
-      var t = setTimeout(function () { reject(new Error('timeout')); }, TIMEOUT);
-      promise.then(function (v) { clearTimeout(t); resolve(v); },
-                   function (e) { clearTimeout(t); reject(e); });
+      var minuteur = setTimeout(function () { reject(new Error('timeout')); }, TIMEOUT);
+      promise.then(function (v) { clearTimeout(minuteur); resolve(v); },
+                   function (err) { clearTimeout(minuteur); reject(err); });
     });
   }
 
@@ -1003,9 +1003,9 @@
       if (!data) { echec(e('illisible')); return; }
       if (data.error) { echec(erreurServeur(data.error)); return; }
       show(data);
-    }).catch(function (e) {
+    }).catch(function (err) {
       scanning(false);
-      if (e && e.message === 'timeout') {
+      if (err && err.message === 'timeout') {
         echec(e('delai'));
       } else {
         echec(e('connexion'));
