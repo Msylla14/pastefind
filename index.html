@@ -178,8 +178,9 @@
     text-transform:uppercase;color:var(--ink-3);margin:0}
   .clear{font-size:12.5px;color:var(--ink-3)}
   .clear:hover{color:var(--bad)}
-  .row{display:flex;align-items:center;gap:13px;padding:12px 2px;border-bottom:1px solid var(--line-soft)}
+  .row{display:flex;align-items:center;gap:13px;padding:12px 2px;border-bottom:1px solid var(--line-soft);cursor:pointer;border-radius:8px}
   .row:last-child{border-bottom:none}
+  .row:hover{background:var(--panel-2)}
   .row .mini{width:36px;height:36px;border-radius:7px;flex:none;position:relative;overflow:hidden;background:var(--panel-2)}
   .row .mini .disc{position:absolute;inset:0;
     background:radial-gradient(circle at 50% 50%,rgba(0,0,0,.9) 0 9%,transparent 9.5%),
@@ -489,6 +490,7 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
       <p data-th="confiance"></p>
     </div>
+    <p class="fine" data-th="avisPlay"></p>
     <p class="fine" id="ios-astuce" data-th="installerIphone" hidden></p>
     <div class="fine">PasteFind · contact@pastefind.com</div>
   </footer>
@@ -540,6 +542,7 @@
       histoireVide: 'Rien pour l\'instant. Ce que tu identifies s\'enregistre ici, sur ton appareil uniquement.',
       installerIphone: 'Sur iPhone, tu peux l\'installer : touche <b>Partager</b>, puis <b>Sur l\'écran d\'accueil</b>.',
       confiance: 'Ton fichier est supprimé de nos serveurs dès l\'analyse terminée. Aucun compte, aucune publicité, aucun traceur. <a href="/privacy/">Politique de confidentialité</a>.',
+      avisPlay: 'Envie de nous aider ? <a href="https://play.google.com/store/apps/details?id=com.pastefind.app" target="_blank" rel="noopener">Laisse ton avis sur le Play Store</a>.',
       titreInconnu: 'Titre inconnu', artisteInconnu: 'Artiste inconnu',
       unite: 'Mo',
       instant: 'à l\'instant', min: ' min', heure: ' h', jour: ' j',
@@ -588,6 +591,7 @@
       histoireVide: 'Nothing yet. Whatever you identify is saved here, on your device only.',
       installerIphone: 'On iPhone you can install it: tap <b>Share</b>, then <b>Add to Home Screen</b>.',
       confiance: 'Your file is deleted from our servers as soon as the analysis is done. No account, no ads, no trackers. <a href="/privacy/">Privacy policy</a>.',
+      avisPlay: 'Want to help us out? <a href="https://play.google.com/store/apps/details?id=com.pastefind.app" target="_blank" rel="noopener">Leave a review on the Play Store</a>.',
       titreInconnu: 'Unknown title', artisteInconnu: 'Unknown artist',
       unite: 'MB',
       instant: 'just now', min: ' min', heure: ' h', jour: ' d',
@@ -636,6 +640,7 @@
       histoireVide: 'Nada por ahora. Lo que identifiques se guarda aquí, solo en tu dispositivo.',
       installerIphone: 'En iPhone puedes instalarlo: pulsa <b>Compartir</b> y luego <b>Añadir a pantalla de inicio</b>.',
       confiance: 'Tu archivo se elimina de nuestros servidores en cuanto termina el análisis. Sin cuenta, sin publicidad, sin rastreadores. <a href="/privacy/">Política de privacidad</a>.',
+      avisPlay: '¿Quieres ayudarnos? <a href="https://play.google.com/store/apps/details?id=com.pastefind.app" target="_blank" rel="noopener">Deja tu opinión en Play Store</a>.',
       titreInconnu: 'Título desconocido', artisteInconnu: 'Artista desconocido',
       unite: 'MB',
       instant: 'ahora mismo', min: ' min', heure: ' h', jour: ' d',
@@ -684,6 +689,7 @@
       histoireVide: 'Nada por enquanto. O que você identificar fica salvo aqui, só no seu aparelho.',
       installerIphone: 'No iPhone dá para instalar: toque em <b>Compartilhar</b> e depois <b>Adicionar à Tela de Início</b>.',
       confiance: 'Seu arquivo é apagado dos nossos servidores assim que a análise termina. Sem conta, sem anúncios, sem rastreadores. <a href="/privacy/">Política de privacidade</a>.',
+      avisPlay: 'Quer nos ajudar? <a href="https://play.google.com/store/apps/details?id=com.pastefind.app" target="_blank" rel="noopener">Deixe sua avaliação na Play Store</a>.',
       titreInconnu: 'Título desconhecido', artisteInconnu: 'Artista desconhecido',
       unite: 'MB',
       instant: 'agora mesmo', min: ' min', heure: ' h', jour: ' d',
@@ -732,6 +738,7 @@
       histoireVide: 'Ancora niente. Quello che riconosci resta qui, solo sul tuo dispositivo.',
       installerIphone: 'Su iPhone puoi installarla: tocca <b>Condividi</b>, poi <b>Aggiungi a Home</b>.',
       confiance: 'Il tuo file viene cancellato dai nostri server appena l\'analisi è finita. Nessun account, nessuna pubblicità, nessun tracciamento. <a href="/privacy/">Informativa sulla privacy</a>.',
+      avisPlay: 'Vuoi aiutarci? <a href="https://play.google.com/store/apps/details?id=com.pastefind.app" target="_blank" rel="noopener">Lascia una recensione sul Play Store</a>.',
       titreInconnu: 'Titolo sconosciuto', artisteInconnu: 'Artista sconosciuto',
       unite: 'MB',
       instant: 'adesso', min: ' min', heure: ' h', jour: ' g',
@@ -1055,35 +1062,47 @@
   /* ---- résultat ---- */
   var current = null;
 
-  function show(d) {
-    var titre = d.title || t('titreInconnu');
-    var a = d.subtitle || t('artisteInconnu');
-    current = { t: titre, a: a, img: d.image || '', sp: d.spotify_url || '', ap: d.apple_music || '', yt: d.youtube_url || '' };
+  function renderResult(track, opts) {
+    opts = opts || {};
+    current = track;
 
-    $('rtitle').textContent = titre;
-    $('rartist').textContent = a;
+    $('rtitle').textContent = track.t;
+    $('rartist').textContent = track.a;
 
     var cover = $('cover');
     cover.classList.remove('on');
-    if (d.image) {
+    if (track.img) {
       cover.onload = function () { cover.classList.add('on'); };
       cover.onerror = function () { cover.classList.remove('on'); };
-      cover.src = d.image;
+      cover.src = track.img;
     } else {
       cover.removeAttribute('src');
     }
 
-    var q = encodeURIComponent(titre + ' ' + a);
-    $('l-sp').href = current.sp || ('https://open.spotify.com/search/' + q);
-    $('l-ap').href = current.ap || ('https://music.apple.com/search?term=' + q);
-    $('l-yt').href = current.yt || ('https://www.youtube.com/results?search_query=' + q);
+    var q = encodeURIComponent(track.t + ' ' + track.a);
+    $('l-sp').href = track.sp || ('https://open.spotify.com/search/' + q);
+    $('l-ap').href = track.ap || ('https://music.apple.com/search?term=' + q);
+    $('l-yt').href = track.yt || ('https://www.youtube.com/results?search_query=' + q);
 
     $('copytxt').textContent = t('copierTitre');
     $('copy').classList.remove('done');
 
     hideAll();
     $('result').classList.add('on');
-    remember(current);
+    if (opts.remember !== false) remember(current);
+  }
+
+  function show(d) {
+    var titre = d.title || t('titreInconnu');
+    var a = d.subtitle || t('artisteInconnu');
+    renderResult({ t: titre, a: a, img: d.image || '', sp: d.spotify_url || '', ap: d.apple_music || '', yt: d.youtube_url || '' });
+  }
+
+  /* Rouvrir un morceau depuis l'historique : même affichage que show(),
+     mais sans le remonter dans l'historique (remember: false) pour ne pas
+     perturber l'ordre ni les horodatages « il y a... ». */
+  function reopen(item) {
+    renderResult({ t: item.t, a: item.a, img: item.img || '', sp: item.sp || '', ap: item.ap || '', yt: item.yt || '' }, { remember: false });
   }
 
   /* ---- outils ---- */
@@ -1119,7 +1138,7 @@
   /* ---- historique ---- */
   function remember(track) {
     var list = store.read().filter(function (x) { return !(x.t === track.t && x.a === track.a); });
-    list.unshift({ t: track.t, a: track.a, img: track.img, at: Date.now() });
+    list.unshift({ t: track.t, a: track.a, img: track.img, sp: track.sp || '', ap: track.ap || '', yt: track.yt || '', at: Date.now() });
     store.write(list);
     paint();
   }
@@ -1141,6 +1160,9 @@
 
     list.forEach(function (item) {
       var row = document.createElement('div'); row.className = 'row';
+      row.tabIndex = 0;
+      row.setAttribute('role', 'button');
+      row.setAttribute('aria-label', item.t + ' — ' + item.a);
       var mini = document.createElement('div'); mini.className = 'mini';
       var disc = document.createElement('div'); disc.className = 'disc';
       mini.appendChild(disc);
@@ -1157,6 +1179,10 @@
       rt.appendChild(a); rt.appendChild(b);
       var when = document.createElement('div'); when.className = 'when'; when.textContent = ago(item.at);
       row.appendChild(mini); row.appendChild(rt); row.appendChild(when);
+      row.addEventListener('click', function () { reopen(item); });
+      row.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); reopen(item); }
+      });
       rows.appendChild(row);
     });
   }
