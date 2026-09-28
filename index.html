@@ -327,9 +327,103 @@
   /* Écran large mais mouvement réduit : on garde les colonnes,
      on coupe l'animation. */
   @media (prefers-reduced-motion: reduce){.bg{display:none !important}}
+
+  /* ---- Ecran d'ouverture de l'application (radar qui se redresse en 3D,
+     faisceau qui balaie, notes qui s'allument). N'existe que dans l'appli
+     installee : dans un navigateur, aucun element .pf-intro n'est cree. ---- */
+  @property --pf-sweep{syntax:'<angle>';inherits:false;initial-value:0deg}
+  .pf-intro{position:fixed;inset:0;z-index:9999;background:var(--ground);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    perspective:900px;cursor:pointer;-webkit-tap-highlight-color:transparent;
+    transition:opacity .42s ease}
+  .pf-intro.pf-out{opacity:0;pointer-events:none}
+  .pf-disc{position:relative;width:min(64vw,300px);aspect-ratio:1/1;
+    background:var(--ground);opacity:0;transform:rotateX(78deg) scale(.86)}
+  .pf-disc img{position:absolute;inset:0;width:100%;height:100%;display:block;
+    mix-blend-mode:lighten;-webkit-user-select:none;user-select:none;pointer-events:none}
+  .pf-dim{filter:grayscale(1) brightness(.3)}
+  .pf-lit{opacity:0;
+    -webkit-mask-image:conic-gradient(from 62deg,#000 0deg,#000 var(--pf-sweep),transparent calc(var(--pf-sweep) + 8deg),transparent 360deg);
+            mask-image:conic-gradient(from 62deg,#000 0deg,#000 var(--pf-sweep),transparent calc(var(--pf-sweep) + 8deg),transparent 360deg)}
+  .pf-beam{position:absolute;inset:3%;border-radius:50%;opacity:0;mix-blend-mode:screen;
+    transform:rotate(62deg);
+    background:conic-gradient(from 0deg,transparent 0deg,transparent 300deg,
+      rgba(255,178,36,.10) 318deg,rgba(255,178,36,.42) 356deg,rgba(255,226,160,.95) 359.3deg,transparent 360deg)}
+  .pf-halo{position:absolute;inset:-20%;border-radius:50%;opacity:0;
+    background:radial-gradient(circle,rgba(255,178,36,.20),transparent 62%)}
+  .pf-name{margin-top:26px;font-family:'Syne',sans-serif;font-weight:800;font-size:22px;
+    letter-spacing:-.025em;color:var(--ink);opacity:0;transform:translateY(6px)}
+  .pf-name b{color:var(--amber);font-weight:800}
+
+  .pf-go .pf-disc{animation:pfUp 1s cubic-bezier(.2,.9,.25,1) forwards}
+  .pf-go .pf-lit{animation:pfSweep 1.5s linear .7s forwards,pfShow .15s linear .7s forwards}
+  .pf-go .pf-beam{animation:pfBeam 1.5s linear .7s forwards,pfShow .15s linear .7s forwards,pfHide .35s ease-out 2.2s forwards}
+  .pf-go .pf-halo{animation:pfHalo 1.1s ease-out 2.1s forwards}
+  .pf-go .pf-name{animation:pfName .5s ease-out 2.2s forwards}
+  @keyframes pfUp{0%{opacity:0;transform:rotateX(78deg) scale(.86)}35%{opacity:1}100%{opacity:1;transform:rotateX(0deg) scale(1)}}
+  @keyframes pfSweep{from{--pf-sweep:0deg}to{--pf-sweep:360deg}}
+  @keyframes pfBeam{from{transform:rotate(62deg)}to{transform:rotate(422deg)}}
+  @keyframes pfShow{to{opacity:1}}
+  @keyframes pfHide{to{opacity:0}}
+  @keyframes pfHalo{0%{opacity:0;transform:scale(.85)}40%{opacity:1}100%{opacity:0;transform:scale(1.12)}}
+  @keyframes pfName{to{opacity:1;transform:translateY(0)}}
 </style>
 </head>
 <body>
+<script>
+/* Ecran d'ouverture : seulement dans l'application installee (ou avec
+   ?intro=1 pour l'apercu), une fois par session, jamais si l'appareil
+   demande de reduire les animations. Un toucher le passe. */
+(function () {
+  try {
+    var apercu = /[?&]intro=1(&|$)/.test(location.search);
+    var mm = function (q) { return !!(window.matchMedia && window.matchMedia(q).matches); };
+    var appli = navigator.standalone === true || mm('(display-mode: standalone)') ||
+                mm('(display-mode: fullscreen)') ||
+                (document.referrer || '').indexOf('android-app://') === 0;
+    if (!apercu && !appli) return;
+    if (mm('(prefers-reduced-motion: reduce)')) return;
+    if (!apercu) {
+      try {
+        if (sessionStorage.getItem('pf.intro')) return;
+        sessionStorage.setItem('pf.intro', '1');
+      } catch (e) {}
+    }
+
+    var el = document.createElement('div');
+    el.className = 'pf-intro';
+    el.setAttribute('aria-hidden', 'true');
+    el.innerHTML =
+      '<div class="pf-disc"><div class="pf-halo"></div>' +
+      '<img class="pf-dim" src="/icon-512.png" alt="">' +
+      '<img class="pf-lit" src="/icon-512.png" alt="">' +
+      '<div class="pf-beam"></div></div>' +
+      '<div class="pf-name">Paste<b>Find</b></div>';
+    document.body.insertBefore(el, document.body.firstChild);
+
+    var fini = false, lance = false;
+    function fermer() {
+      if (fini) return; fini = true;
+      el.classList.add('pf-out');
+      setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 480);
+    }
+    function lancer() {
+      if (lance || fini) return; lance = true;
+      el.classList.add('pf-go');
+      setTimeout(fermer, 3000);
+    }
+    var img = el.querySelector('.pf-lit');
+    if (img.complete && img.naturalWidth) lancer();
+    else {
+      img.addEventListener('load', lancer);
+      img.addEventListener('error', fermer);
+    }
+    setTimeout(function () { if (!lance) fermer(); }, 1500);  /* image trop lente : on n'attend pas */
+    setTimeout(fermer, 5000);                                   /* filet de securite */
+    el.addEventListener('click', fermer);
+  } catch (e) {}
+})();
+</script>
 
 <div class="bg" aria-hidden="true">
   <div class="halo"></div>
