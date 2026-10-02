@@ -475,7 +475,12 @@ def truncate_audio_if_needed(file_path: str, max_mb: int = 8) -> str:
         return file_path
 
     logger.info(f"[Truncate] File too large ({file_size} bytes), truncating...")
-    truncated_path = file_path.replace('.mp3', '_short.mp3').replace('.mp4', '_short.mp3').replace('.m4a', '_short.mp3').replace('.wav', '_short.mp3')
+    # Toujours un nom NOUVEAU en .mp3 : l'ancien remplacement ne connaissait que
+    # mp3/mp4/m4a/wav, et pour un gros .webm/.mov ffmpeg aurait ecrit par-dessus
+    # le fichier qu'il etait en train de lire.
+    truncated_path = os.path.splitext(file_path)[0] + '_short.mp3'
+    if truncated_path == file_path:
+        truncated_path = os.path.splitext(file_path)[0] + '_short2.mp3'
 
     # Try to use ffmpeg
     ffmpeg_paths = [
@@ -823,12 +828,16 @@ async def upload_file(file: UploadFile = File(...)):
         logger.info(f"[/api/upload] File: {filename}")
 
         # Check extension
-        allowed_extensions = {"mp3", "wav", "mp4", "m4a", "webm", "ogg", "aac", "flac"}
+        # mov / m4v / caf : videos et enregistrements d'iPhone ; 3gp / amr : vieux
+        # telephones Android ; mkv / opus : autres formats courants. ffmpeg sait
+        # tous les lire, AudD ne voit de toute facon que l'extrait mp3 decoupe.
+        allowed_extensions = {"mp3", "wav", "mp4", "m4a", "webm", "ogg", "aac", "flac",
+                              "mov", "m4v", "3gp", "3gpp", "mkv", "opus", "amr", "caf"}
         file_ext = filename.rsplit('.', 1)[-1].lower() if '.' in filename else 'mp3'
 
         if file_ext not in allowed_extensions:
             return JSONResponse(status_code=400, content={
-                "error": f"❌ Format non supporté : .{file_ext}\n\nFormats acceptés : MP3, MP4, WAV, M4A, WEBM, OGG, AAC, FLAC"
+                "error": f"❌ Format non supporté : .{file_ext}\n\nFormats acceptés : MP3, MP4, MOV, WAV, M4A, WEBM, OGG, AAC, FLAC, 3GP, MKV, OPUS"
             })
 
         # Save to temp. Read in bounded chunks instead of file.read() in one
@@ -857,16 +866,19 @@ async def upload_file(file: UploadFile = File(...)):
         logger.info(f"[/api/upload] Saved: {temp_path} ({len(content)} bytes)")
 
         # Truncate if too large
+        original_path = temp_path
         temp_path = await asyncio.to_thread(truncate_audio_if_needed, temp_path)
 
         # Analyse : premiere fenetre, puis plus loin dans le fichier si besoin
         result = await asyncio.to_thread(analyser_par_fenetres, temp_path)
 
-        # Cleanup
-        try:
-            os.remove(temp_path)
-        except:
-            pass
+        # Cleanup : le fichier recu ET sa version raccourcie (avant, l'original
+        # d'un gros fichier restait dans /tmp)
+        for chemin in {temp_path, original_path}:
+            try:
+                os.remove(chemin)
+            except Exception:
+                pass
 
         if result.get("error") == "no_match":
             return JSONResponse(status_code=200, content={
