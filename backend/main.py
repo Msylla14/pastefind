@@ -359,9 +359,32 @@ def derouler_lien_court(url: str) -> str:
     return url
 
 
+def normaliser_tiktok(url: str) -> str:
+    """Met un lien TikTok sous la forme que yt-dlp reconnait.
+
+    yt-dlp n'accepte que www.tiktok.com/@nom/video/123. Les liens copies
+    depuis certains telephones arrivent en tiktok.com/... (sans www) ou
+    m.tiktok.com/..., et les publications « photo » (diaporama avec musique)
+    en .../photo/123 : yt-dlp repondait « Unsupported URL ». On reecrit
+    l'adresse ; la musique d'un diaporama est servie par la meme page.
+    """
+    try:
+        p = urllib.parse.urlparse(url)
+        hote = (p.netloc or '').lower()
+        if hote not in ('tiktok.com', 'm.tiktok.com', 'www.tiktok.com'):
+            return url
+        chemin = re.sub(r'^(/@[^/]+)/photo/(\d+)', r'\1/video/\2', p.path)
+        neuf = urllib.parse.urlunparse(('https', 'www.tiktok.com', chemin, '', p.query, ''))
+        if neuf != url:
+            logger.info(f"[tiktok] lien normalise : {neuf}")
+        return neuf
+    except Exception:
+        return url
+
+
 def download_audio(url: str) -> str | None:
     """Download audio from URL using yt-dlp. Returns path to MP3 file."""
-    url = derouler_lien_court(url)
+    url = normaliser_tiktok(derouler_lien_court(url))
     temp_dir = "/tmp"
     output_id = str(uuid.uuid4())
     output_template = f"{temp_dir}/{output_id}.%(ext)s"
